@@ -3,7 +3,9 @@
     "allow": [
       "Bash(pnpm add:*)",
       "Bash(cargo check:*)",
-      "Bash(cargo add:*)"
+      "Bash(cargo add:*)",
+      "Bash(npx vue-tsc:*)",
+      "Bash(npx vite:*)"
     ]
   }
 }

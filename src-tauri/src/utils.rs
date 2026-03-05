@@ -31,6 +31,15 @@ pub fn get_deno_path(app: &AppHandle) -> Result<PathBuf, String> {
     }
 }
 
+/// 获取 Cookie 文件路径（存放在应用数据目录下）
+pub fn get_cookie_path(app: &AppHandle) -> Result<PathBuf, String> {
+    let app_data = app
+        .path()
+        .app_data_dir()
+        .map_err(|e| format!("Failed to get app data dir: {}", e))?;
+    Ok(app_data.join("cookies.txt"))
+}
+
 /// 获取 yt-dlp 下载地址（根据平台）
 pub fn get_ytdlp_download_url() -> &'static str {
     if cfg!(target_os = "windows") {
@@ -40,6 +49,19 @@ pub fn get_ytdlp_download_url() -> &'static str {
     } else {
         "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_linux"
     }
+}
+
+/// 如果 Deno 已安装，返回 JS 运行时参数
+pub fn build_js_runtime_args(app: &AppHandle) -> Vec<String> {
+    if let Ok(deno_path) = get_deno_path(app) {
+        if deno_path.exists() {
+            return vec![
+                "--js-runtimes".to_string(),
+                format!("deno:{}", deno_path.to_string_lossy()),
+            ];
+        }
+    }
+    vec![]
 }
 
 /// 获取 Deno 下载地址（根据平台和架构）

@@ -2,6 +2,8 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { useSettingStore } from "@/stores/setting";
+import DownloadDirCard from "@/components/DownloadDirCard.vue";
+import CookieCard from "@/components/CookieCard.vue";
 import type { YtdlpStatus, DenoStatus, DownloadProgress } from "@/types";
 
 const settingStore = useSettingStore();
@@ -31,7 +33,8 @@ const ytdlpDownloading = ref(false);
 const ytdlpDownloadPercent = ref(0);
 const ytdlpUpdating = ref(false);
 
-async function checkYtdlpStatus() {
+/** 检查 yt-dlp 安装状态与版本 */
+const checkYtdlpStatus = async () => {
   ytdlpChecking.value = true;
   try {
     ytdlpStatus.value = await invoke<YtdlpStatus>("get_ytdlp_status");
@@ -40,9 +43,10 @@ async function checkYtdlpStatus() {
   } finally {
     ytdlpChecking.value = false;
   }
-}
+};
 
-async function handleDownloadYtdlp() {
+/** 下载 yt-dlp 并监听进度事件 */
+const handleDownloadYtdlp = async () => {
   ytdlpDownloading.value = true;
   ytdlpDownloadPercent.value = 0;
   const unlisten = await listen<DownloadProgress>(
@@ -61,9 +65,10 @@ async function handleDownloadYtdlp() {
     unlisten();
     ytdlpDownloading.value = false;
   }
-}
+};
 
-async function handleUpdateYtdlp() {
+/** 检查并更新 yt-dlp 到最新版本 */
+const handleUpdateYtdlp = async () => {
   ytdlpUpdating.value = true;
   try {
     const result = await invoke<string>("update_ytdlp");
@@ -80,7 +85,7 @@ async function handleUpdateYtdlp() {
   } finally {
     ytdlpUpdating.value = false;
   }
-}
+};
 
 // ========== Deno ==========
 const denoStatus = ref<DenoStatus | null>(null);
@@ -88,7 +93,8 @@ const denoChecking = ref(true);
 const denoDownloading = ref(false);
 const denoDownloadPercent = ref(0);
 
-async function checkDenoStatus() {
+/** 检查 Deno 安装状态与版本 */
+const checkDenoStatus = async () => {
   denoChecking.value = true;
   try {
     denoStatus.value = await invoke<DenoStatus>("get_deno_status");
@@ -97,9 +103,10 @@ async function checkDenoStatus() {
   } finally {
     denoChecking.value = false;
   }
-}
+};
 
-async function handleDownloadDeno() {
+/** 下载 Deno 并监听进度事件 */
+const handleDownloadDeno = async () => {
   denoDownloading.value = true;
   denoDownloadPercent.value = 0;
   const unlisten = await listen<DownloadProgress>(
@@ -118,13 +125,13 @@ async function handleDownloadDeno() {
     unlisten();
     denoDownloading.value = false;
   }
-}
+};
 
-// ========== 刷新 ==========
-function refreshAll() {
+/** 刷新所有依赖状态 */
+const refreshAll = () => {
   checkYtdlpStatus();
   checkDenoStatus();
-}
+};
 
 onMounted(async () => {
   platform.value = await invoke<string>("get_platform");
@@ -265,6 +272,12 @@ onMounted(async () => {
         </n-flex>
       </n-spin>
     </n-card>
+
+    <!-- 下载目录 -->
+    <DownloadDirCard class="section-card" />
+
+    <!-- Cookie -->
+    <CookieCard class="section-card" />
 
     <!-- 外观 -->
     <n-card title="外观" size="small" class="section-card">

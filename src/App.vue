@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Icon } from "@iconify/vue";
+import "@/styles/transitions.scss";
 
 const router = useRouter();
 const route = useRoute();
@@ -190,19 +191,4 @@ const navItems = [
   }
 }
 
-// 路由切换动画
-.fade-slide-enter-active,
-.fade-slide-leave-active {
-  transition: all 0.15s ease;
-}
-
-.fade-slide-enter-from {
-  opacity: 0;
-  transform: translateX(8px);
-}
-
-.fade-slide-leave-to {
-  opacity: 0;
-  transform: translateX(-8px);
-}
 </style>

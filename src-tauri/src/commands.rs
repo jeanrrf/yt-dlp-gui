@@ -1,5 +1,6 @@
 use crate::utils;
 use futures_util::StreamExt;
+use serde_json::Value;
 use std::process::Stdio;
 use tauri::{AppHandle, Emitter};
 use tokio::io::AsyncBufReadExt;
@@ -328,4 +329,59 @@ pub async fn download_deno(app: AppHandle) -> Result<(), String> {
     let _ = tokio::fs::remove_file(&zip_path).await;
 
     Ok(())
+}
+
+// ========== Cookie ==========
+
+#[tauri::command]
+pub async fn save_cookie_text(app: AppHandle, text: String) -> Result<String, String> {
+    let cookie_path = utils::get_cookie_path(&app)?;
+    tokio::fs::write(&cookie_path, text.as_bytes())
+        .await
+        .map_err(|e| format!("Failed to save cookie file: {}", e))?;
+    Ok(cookie_path.to_string_lossy().to_string())
+}
+
+// ========== 视频信息 ==========
+
+#[tauri::command]
+pub async fn fetch_video_info(
+    app: AppHandle,
+    url: String,
+    cookie_file: Option<String>,
+) -> Result<Value, String> {
+    let ytdlp_path = utils::get_ytdlp_path(&app)?;
+    if !ytdlp_path.exists() {
+        return Err("yt-dlp 未安装，请先在设置中下载".to_string());
+    }
+
+    let mut args = vec!["-j".to_string(), "--no-download".to_string()];
+    args.extend(utils::build_js_runtime_args(&app));
+
+    if let Some(ref cf) = cookie_file {
+        if !cf.is_empty() {
+            args.push("--cookies".to_string());
+            args.push(cf.clone());
+        }
+    }
+
+    args.push(url);
+
+    let mut cmd = tokio::process::Command::new(&ytdlp_path);
+    cmd.args(&args).env("PYTHONUTF8", "1");
+    #[cfg(target_os = "windows")]
+    cmd.creation_flags(CREATE_NO_WINDOW);
+
+    let output = cmd
+        .output()
+        .await
+        .map_err(|e| format!("Failed to run yt-dlp: {}", e))?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+        return Err(format!("获取视频信息失败: {}", stderr));
+    }
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    serde_json::from_str(&stdout).map_err(|e| format!("解析视频信息失败: {}", e))
 }

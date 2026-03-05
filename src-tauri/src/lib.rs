@@ -6,6 +6,7 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![
             commands::get_platform,
             commands::get_ytdlp_status,
@@ -13,6 +14,8 @@ pub fn run() {
             commands::update_ytdlp,
             commands::get_deno_status,
             commands::download_deno,
+            commands::save_cookie_text,
+            commands::fetch_video_info,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
