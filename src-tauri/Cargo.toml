@@ -28,4 +28,5 @@ tokio = { version = "1.50.0", features = ["process", "io-util", "sync"] }
 futures-util = "0.3.32"
 zip = "8.2.0"
 tauri-plugin-dialog = "2.6.0"
+tauri-plugin-clipboard-manager = "2.3.2"
 

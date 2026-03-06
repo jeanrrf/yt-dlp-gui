@@ -6,7 +6,11 @@ import type { Component } from "vue";
 const router = useRouter();
 const route = useRoute();
 
-const currentRoute = computed(() => route.name as string);
+const currentRoute = computed(() => {
+  const name = route.name as string;
+  // detail 页属于首页流程，导航高亮首页
+  return name === "detail" ? "home" : name;
+});
 
 function navigateTo(name: string) {
   router.push({ name });

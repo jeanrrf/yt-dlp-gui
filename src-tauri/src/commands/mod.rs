@@ -72,9 +72,25 @@ pub struct DownloadParams {
     pub video_format: Option<String>,
     pub audio_format: Option<String>,
     pub cookie_file: Option<String>,
+    /// 代理地址
+    pub proxy: Option<String>,
+    /// 文件名模板
+    pub output_template: Option<String>,
+    /// 并发分片数
+    pub concurrent_fragments: Option<u32>,
+    /// 不覆盖已有文件
+    pub no_overwrites: bool,
     pub embed_subs: bool,
     pub embed_thumbnail: bool,
     pub embed_metadata: bool,
+    /// 嵌入章节标记
+    pub embed_chapters: bool,
+    /// 移除赞助片段（SponsorBlock）
+    pub sponsorblock_remove: bool,
+    /// 提取音频模式（-x）
+    pub extract_audio: bool,
+    /// 音频转换格式（--audio-format）
+    pub audio_convert_format: Option<String>,
     pub no_merge: bool,
     pub recode_format: Option<String>,
     pub limit_rate: Option<String>,

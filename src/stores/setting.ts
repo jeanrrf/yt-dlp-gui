@@ -16,12 +16,32 @@ export const useSettingStore = defineStore("setting", () => {
   /** Cookie 文件路径 */
   const cookieFile = ref("");
 
+  /** 代理地址，如 http://127.0.0.1:7890 或 socks5://... */
+  const proxy = ref("");
+
+  /** 文件名模板，使用 yt-dlp output template 语法 */
+  const outputTemplate = ref("%(title).200s.%(ext)s");
+
+  /** 并发分片数（--concurrent-fragments），0 表示不启用 */
+  const concurrentFragments = ref(0);
+
+  /** 文件已存在时不覆盖 */
+  const noOverwrites = ref(false);
+
+  /** 最大同时下载任务数，0 表示不限制 */
+  const maxConcurrentDownloads = ref(0);
+
   return {
     themeMode,
     downloadDir,
     cookieMode,
     cookieText,
     cookieFile,
+    proxy,
+    outputTemplate,
+    concurrentFragments,
+    noOverwrites,
+    maxConcurrentDownloads,
   };
 }, {
   persist: true,

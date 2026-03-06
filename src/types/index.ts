@@ -36,6 +36,10 @@ export interface ExtraOptions {
   embedSubs: boolean;
   embedThumbnail: boolean;
   embedMetadata: boolean;
+  embedChapters: boolean;
+  sponsorblockRemove: boolean;
+  extractAudio: boolean;
+  audioConvertFormat: string;
   noMerge: boolean;
   recodeFormat: string;
   limitRate: string;
@@ -48,9 +52,17 @@ export interface DownloadTaskParams {
   videoFormat: string | null;
   audioFormat: string | null;
   cookieFile: string | null;
+  proxy: string | null;
+  outputTemplate: string | null;
+  concurrentFragments: number | null;
+  noOverwrites: boolean;
   embedSubs: boolean;
   embedThumbnail: boolean;
   embedMetadata: boolean;
+  embedChapters: boolean;
+  sponsorblockRemove: boolean;
+  extractAudio: boolean;
+  audioConvertFormat: string | null;
   noMerge: boolean;
   recodeFormat: string | null;
   limitRate: string | null;
@@ -67,7 +79,7 @@ export interface DownloadTask {
   title: string;
   thumbnail: string;
   formatLabel: string;
-  status: "downloading" | "paused" | "completed" | "error" | "cancelled";
+  status: "queued" | "downloading" | "paused" | "completed" | "error" | "cancelled";
   percent: number;
   speed: string;
   eta: string;

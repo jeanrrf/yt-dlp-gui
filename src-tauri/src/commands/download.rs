@@ -225,14 +225,40 @@ fn build_download_args(app: &AppHandle, params: &DownloadParams) -> Result<Vec<S
         }
     }
 
+    // 代理
+    if let Some(ref proxy) = params.proxy {
+        if !proxy.is_empty() {
+            args.push("--proxy".to_string());
+            args.push(proxy.clone());
+        }
+    }
+
     // 输出路径模板
+    let template = params
+        .output_template
+        .as_deref()
+        .filter(|s| !s.is_empty())
+        .unwrap_or("%(title).200s.%(ext)s");
     let output_template = std::path::PathBuf::from(&params.download_dir)
-        .join("%(title).200s.%(ext)s")
+        .join(template)
         .to_string_lossy()
         .to_string();
     args.push("-o".to_string());
     args.push(output_template);
     args.push("--windows-filenames".to_string());
+
+    // 不覆盖已有文件
+    if params.no_overwrites {
+        args.push("--no-overwrites".to_string());
+    }
+
+    // 并发分片下载
+    if let Some(n) = params.concurrent_fragments {
+        if n > 1 {
+            args.push("--concurrent-fragments".to_string());
+            args.push(n.to_string());
+        }
+    }
 
     // Cookie
     if let Some(ref cf) = params.cookie_file {
@@ -251,6 +277,25 @@ fn build_download_args(app: &AppHandle, params: &DownloadParams) -> Result<Vec<S
     }
     if params.embed_metadata {
         args.push("--embed-metadata".to_string());
+    }
+    // 嵌入章节标记
+    if params.embed_chapters {
+        args.push("--embed-chapters".to_string());
+    }
+    // SponsorBlock：移除赞助片段
+    if params.sponsorblock_remove {
+        args.push("--sponsorblock-remove".to_string());
+        args.push("all".to_string());
+    }
+    // 提取音频模式
+    if params.extract_audio {
+        args.push("-x".to_string());
+        if let Some(ref fmt) = params.audio_convert_format {
+            if !fmt.is_empty() {
+                args.push("--audio-format".to_string());
+                args.push(fmt.clone());
+            }
+        }
     }
     if params.no_merge {
         args.push("--no-merge-output".to_string());

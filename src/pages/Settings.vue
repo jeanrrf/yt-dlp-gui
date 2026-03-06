@@ -24,6 +24,24 @@ const themeModeOptions = [
   { label: "暗色", value: "dark" },
 ];
 
+// 并发分片选项
+const concurrentFragmentsOptions = [
+  { label: "不启用", value: 0 },
+  { label: "2", value: 2 },
+  { label: "4", value: 4 },
+  { label: "8", value: 8 },
+  { label: "16", value: 16 },
+];
+
+// 最大同时下载数选项
+const maxConcurrentOptions = [
+  { label: "不限制", value: 0 },
+  { label: "1", value: 1 },
+  { label: "2", value: 2 },
+  { label: "3", value: 3 },
+  { label: "5", value: 5 },
+];
+
 // ========== yt-dlp ==========
 const ytdlpStatus = ref<YtdlpStatus | null>(null);
 const ytdlpChecking = ref(true);
@@ -285,12 +303,6 @@ onMounted(async () => {
       </n-spin>
     </n-card>
 
-    <!-- 下载目录 -->
-    <DownloadDirCard class="section-card" />
-
-    <!-- Cookie -->
-    <CookieCard class="section-card" />
-
     <!-- 外观 -->
     <n-card title="外观" size="small" class="section-card">
       <div class="info-list">
@@ -306,11 +318,60 @@ onMounted(async () => {
       </div>
     </n-card>
 
+    <!-- Cookie -->
+    <CookieCard class="section-card" />
+
+    <!-- 下载目录 -->
+    <DownloadDirCard class="section-card" />
+
+    <!-- 下载选项 -->
+    <n-card title="下载选项" size="small" class="section-card">
+      <n-flex vertical :size="12">
+        <div class="info-list">
+          <div class="info-row">
+            <span class="info-label">代理</span>
+            <n-input
+              v-model:value="settingStore.proxy"
+              placeholder="如 http://127.0.0.1:7890"
+              size="small"
+              clearable
+              style="width: 220px"
+            />
+          </div>
+        </div>
+        <div class="info-list">
+          <div class="info-row">
+            <span class="info-label">并发分片数</span>
+            <n-select
+              v-model:value="settingStore.concurrentFragments"
+              :options="concurrentFragmentsOptions"
+              size="small"
+              style="width: 120px"
+            />
+          </div>
+        </div>
+        <div class="info-list">
+          <div class="info-row">
+            <span class="info-label">最大同时下载数</span>
+            <n-select
+              v-model:value="settingStore.maxConcurrentDownloads"
+              :options="maxConcurrentOptions"
+              size="small"
+              style="width: 120px"
+            />
+          </div>
+        </div>
+        <n-checkbox v-model:checked="settingStore.noOverwrites" size="small">
+          文件已存在时不覆盖
+        </n-checkbox>
+      </n-flex>
+    </n-card>
+
     <!-- 关于 -->
     <n-card title="关于" size="small" class="section-card">
       <n-flex vertical :size="8">
         <n-text depth="3" style="font-size: 13px">
-          基于 Tauri 2 + Vue 3 + Naive UI 构建的 yt-dlp 图形界面工具。
+          基于 Tauri 2 + Vue 3 + Naive UI 构建的 yt-dlp 图形界面工具
         </n-text>
         <div class="info-list">
           <div class="info-row">

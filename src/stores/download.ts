@@ -3,6 +3,7 @@ import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
 import localforage from "localforage";
 import type { DownloadTask } from "@/types";
+import { useSettingStore } from "@/stores/setting";
 
 const storage = localforage.createInstance({
   name: "yt-dlp-gui",
@@ -26,6 +27,40 @@ export const useDownloadStore = defineStore("download", () => {
   let listenersSetup = false;
   let saveTimer: ReturnType<typeof setTimeout> | null = null;
 
+  // ========== 队列 ==========
+
+  /** 当前正在下载的任务数 */
+  const activeCount = computed(
+    () => tasks.value.filter((t) => t.status === "downloading").length,
+  );
+
+  /** 尝试启动队列中的下一个任务 */
+  const tryStartNext = async () => {
+    const settingStore = useSettingStore();
+    const max = settingStore.maxConcurrentDownloads;
+    if (max > 0 && activeCount.value >= max) return;
+
+    const next = tasks.value.find((t) => t.status === "queued");
+    if (!next) return;
+
+    next.status = "downloading";
+    try {
+      await invoke("start_download", {
+        params: { id: next.id, ...next.params },
+      });
+    } catch {
+      next.status = "error";
+      next.error = "启动下载失败";
+    }
+  };
+
+  /** 判断是否需要排队，返回 true 表示可以直接下载 */
+  const canStartNow = (): boolean => {
+    const settingStore = useSettingStore();
+    const max = settingStore.maxConcurrentDownloads;
+    return max <= 0 || activeCount.value < max;
+  };
+
   // ========== 持久化 ==========
 
   /** 防抖保存任务列表到 IndexedDB，延迟 500ms */
@@ -41,7 +76,7 @@ export const useDownloadStore = defineStore("download", () => {
     const saved = await storage.getItem<DownloadTask[]>(STORAGE_KEY);
     if (saved && Array.isArray(saved)) {
       for (const task of saved) {
-        if (task.status === "downloading" || task.status === "paused") {
+        if (task.status === "downloading" || task.status === "paused" || task.status === "queued") {
           task.status = "error";
           task.error = "应用重启，下载已中断";
           task.speed = "";
@@ -113,6 +148,8 @@ export const useDownloadStore = defineStore("download", () => {
         task.speed = "";
         if (event.payload.outputFile) task.outputFile = event.payload.outputFile;
       }
+      // 下载完成后尝试启动队列中的下一个
+      tryStartNext();
     });
 
     await listen<{ id: string; error: string }>("download-error", (event) => {
@@ -122,6 +159,8 @@ export const useDownloadStore = defineStore("download", () => {
         task.error = event.payload.error;
         task.speed = "";
       }
+      // 出错后尝试启动队列中的下一个
+      tryStartNext();
     });
   };
 
@@ -158,12 +197,21 @@ export const useDownloadStore = defineStore("download", () => {
   /** 取消下载任务并删除已下载的文件 */
   const cancelTask = async (id: string) => {
     const task = tasks.value.find((t) => t.id === id);
-    if (task) task.status = "cancelled";
-    try {
-      await invoke("cancel_download", { id, deleteFiles: true });
-    } catch {
-      // Process might have already exited
+    if (!task) return;
+
+    const wasQueued = task.status === "queued";
+    task.status = "cancelled";
+
+    if (!wasQueued) {
+      try {
+        await invoke("cancel_download", { id, deleteFiles: true });
+      } catch {
+        // Process might have already exited
+      }
     }
+
+    // 取消后尝试启动队列中的下一个
+    tryStartNext();
   };
 
   /** 重新下载失败或已取消的任务，生成新 ID 并重置状态 */
@@ -172,9 +220,7 @@ export const useDownloadStore = defineStore("download", () => {
     if (!task) return;
 
     const newId = `dl_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-
     task.id = newId;
-    task.status = "downloading";
     task.percent = 0;
     task.speed = "";
     task.eta = "";
@@ -183,9 +229,14 @@ export const useDownloadStore = defineStore("download", () => {
     task.logs = [];
     task.error = undefined;
 
-    await invoke("start_download", {
-      params: { id: newId, ...task.params },
-    });
+    if (canStartNow()) {
+      task.status = "downloading";
+      await invoke("start_download", {
+        params: { id: newId, ...task.params },
+      });
+    } else {
+      task.status = "queued";
+    }
   };
 
   /** 从列表中移除指定任务 */
@@ -207,6 +258,8 @@ export const useDownloadStore = defineStore("download", () => {
   return {
     tasks,
     loaded,
+    activeCount,
+    canStartNow,
     addTask,
     pauseTask,
     resumeTask,

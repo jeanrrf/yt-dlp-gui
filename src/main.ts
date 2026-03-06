@@ -7,6 +7,7 @@ import piniaPluginPersistedstate from "pinia-plugin-persistedstate";
 import router from "./router";
 
 // styles
+import "@/styles/main.scss";
 import "@/styles/transitions.scss";
 
 // 挂载

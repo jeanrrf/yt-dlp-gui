@@ -40,6 +40,9 @@ const emit = defineEmits<{
   right: 0;
   padding: 16px 24px;
   z-index: 10;
+  opacity: 0;
+  animation: slide-up 0.3s ease-in-out forwards;
+  animation-delay: 0.1s;
 
   .bottom-card {
     max-width: 100%;
@@ -48,6 +51,17 @@ const emit = defineEmits<{
 
   .size-info {
     font-size: 13px;
+  }
+}
+
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
   }
 }
 </style>

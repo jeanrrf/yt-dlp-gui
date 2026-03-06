@@ -11,7 +11,7 @@ const downloadStore = useDownloadStore();
 
 const activeTasks = computed(() =>
   downloadStore.tasks.filter(
-    (t) => t.status === "downloading" || t.status === "paused",
+    (t) => t.status === "downloading" || t.status === "paused" || t.status === "queued",
   ),
 );
 
@@ -81,6 +81,7 @@ const progressStatus = (task: DownloadTask): ProgressStatus => {
     case "error":
       return "error";
     case "paused":
+    case "queued":
       return "warning";
     default:
       return "default";
@@ -90,6 +91,8 @@ const progressStatus = (task: DownloadTask): ProgressStatus => {
 // ========== 状态标签 ==========
 const statusLabel = (task: DownloadTask) => {
   switch (task.status) {
+    case "queued":
+      return "排队中";
     case "downloading":
       return task.speed || "下载中...";
     case "paused":
@@ -114,6 +117,7 @@ const statusType = (
     case "error":
       return "error";
     case "paused":
+    case "queued":
       return "warning";
     case "downloading":
       return "info";
@@ -371,6 +375,21 @@ const handleClearFinished = () => {
                             <n-icon size="16"><icon-mdi-pause /></n-icon>
                           </template>
                         </n-button>
+                        <n-button
+                          size="tiny"
+                          strong
+                          secondary
+                          type="error"
+                          @click="handleCancel(task.id)"
+                        >
+                          <template #icon>
+                            <n-icon size="16"
+                              ><icon-mdi-close-circle-outline
+                            /></n-icon>
+                          </template>
+                        </n-button>
+                      </template>
+                      <template v-else-if="task.status === 'queued'">
                         <n-button
                           size="tiny"
                           strong

@@ -27,6 +27,7 @@ pub async fn fetch_video_info(
     app: AppHandle,
     url: String,
     cookie_file: Option<String>,
+    proxy: Option<String>,
 ) -> Result<Value, String> {
     let ytdlp_path = utils::get_ytdlp_path(&app)?;
     if !ytdlp_path.exists() {
@@ -44,6 +45,14 @@ pub async fn fetch_video_info(
         if !cf.is_empty() {
             args.push("--cookies".to_string());
             args.push(cf.clone());
+        }
+    }
+
+    // 代理
+    if let Some(ref p) = proxy {
+        if !p.is_empty() {
+            args.push("--proxy".to_string());
+            args.push(p.clone());
         }
     }
 
