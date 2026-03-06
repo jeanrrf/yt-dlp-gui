@@ -22,7 +22,7 @@ const handleSaveCookieText = async () => {
       text: settingStore.cookieText,
     });
     window.$message.success(`Cookie 已保存至 ${path}`);
-  } catch (e: any) {
+  } catch (e: unknown) {
     window.$message.error(`保存失败: ${e}`);
   }
 };

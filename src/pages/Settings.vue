@@ -75,7 +75,7 @@ const handleDownloadYtdlp = async () => {
     await invoke("download_ytdlp");
     window.$message.success("yt-dlp 下载完成");
     await checkYtdlpStatus();
-  } catch (e: any) {
+  } catch (e: unknown) {
     window.$message.error(`下载失败: ${e}`);
   } finally {
     unlisten();
@@ -96,7 +96,7 @@ const handleUpdateYtdlp = async () => {
     } else {
       window.$message.success("已是最新版本");
     }
-  } catch (e: any) {
+  } catch (e: unknown) {
     window.$message.error(`更新失败: ${e}`);
   } finally {
     ytdlpUpdating.value = false;
@@ -135,7 +135,7 @@ const handleDownloadDeno = async () => {
     await invoke("download_deno");
     window.$message.success("Deno 下载完成");
     await checkDenoStatus();
-  } catch (e: any) {
+  } catch (e: unknown) {
     window.$message.error(`下载失败: ${e}`);
   } finally {
     unlisten();

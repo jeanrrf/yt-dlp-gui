@@ -8,10 +8,12 @@
 mod setup;
 mod video;
 mod download;
+mod tools;
 
 pub use setup::*;
 pub use video::*;
 pub use download::*;
+pub use tools::*;
 
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};

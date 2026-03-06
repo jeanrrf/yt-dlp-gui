@@ -17,12 +17,7 @@ export default defineConfig(async () => ({
         "vue-router",
         "@vueuse/core",
         {
-          "naive-ui": [
-            "useDialog",
-            "useMessage",
-            "useNotification",
-            "useLoadingBar",
-          ],
+          "naive-ui": ["useDialog", "useMessage", "useNotification", "useLoadingBar"],
         },
       ],
       eslintrc: {
@@ -31,10 +26,7 @@ export default defineConfig(async () => ({
       },
     }),
     Components({
-      resolvers: [
-        NaiveUiResolver(),
-        IconsResolver({ prefix: "icon" }),
-      ],
+      resolvers: [NaiveUiResolver(), IconsResolver({ prefix: "icon" })],
     }),
     Icons({
       compiler: "vue3",
@@ -48,7 +40,7 @@ export default defineConfig(async () => ({
   },
   clearScreen: false,
   server: {
-    port: 1420,
+    port: 5688,
     strictPort: true,
     watch: {
       ignored: ["**/src-tauri/**"],

@@ -176,7 +176,7 @@ const handleSearch = async () => {
               <template #icon>
                 <n-icon size="14"><icon-mdi-history /></n-icon>
               </template>
-              历史解析
+              解析历史
             </n-button>
           </template>
           <div class="history-popover">

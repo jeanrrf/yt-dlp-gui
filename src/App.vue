@@ -1,25 +1,29 @@
 <script setup lang="ts">
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import IconMdiHome from "~icons/mdi/home";
 import IconMdiDownload from "~icons/mdi/download";
+import IconMdiToolbox from "~icons/mdi/toolbox";
 import type { Component } from "vue";
 
 const router = useRouter();
 const route = useRoute();
 
 const currentRoute = computed(() => {
-  const name = route.name as string;
-  // detail 页属于首页流程，导航高亮首页
-  return name === "detail" ? "home" : name;
+  const name = (route.name as string) ?? "";
+  if (name === "detail") return "home";
+  if (name.startsWith("toolbox")) return "toolbox";
+  return name;
 });
-
-function navigateTo(name: string) {
-  router.push({ name });
-}
 
 const navItems: { key: string; icon: Component; label: string }[] = [
   { key: "home", icon: IconMdiHome, label: "首页" },
   { key: "downloads", icon: IconMdiDownload, label: "下载" },
+  { key: "toolbox", icon: IconMdiToolbox, label: "工具" },
 ];
+
+onMounted(() => {
+  getCurrentWindow().show();
+});
 </script>
 
 <template>
@@ -28,12 +32,11 @@ const navItems: { key: string; icon: Component; label: string }[] = [
       <n-layout-header bordered class="app-header">
         <!-- 左侧 Logo -->
         <div class="header-side">
-          <div class="logo" @click="navigateTo('home')">
+          <div class="logo" @click="router.push({ name: 'home' })">
             <icon-mdi-youtube />
             <span class="logo-text">GUI</span>
           </div>
         </div>
-
         <!-- 中间导航 -->
         <div class="header-nav">
           <n-button
@@ -44,22 +47,18 @@ const navItems: { key: string; icon: Component; label: string }[] = [
             :secondary="currentRoute === item.key"
             :focusable="false"
             round
-            @click="navigateTo(item.key)"
+            @click="router.push({ name: item.key })"
           >
             <template #icon>
               <n-icon>
                 <component :is="item.icon" />
               </n-icon>
             </template>
-            <span
-              class="nav-label"
-              :class="{ expanded: currentRoute === item.key }"
-            >
+            <span class="nav-label" :class="{ expanded: currentRoute === item.key }">
               {{ item.label }}
             </span>
           </n-button>
         </div>
-
         <!-- 右侧按钮 -->
         <div class="header-side header-side-right">
           <n-button
@@ -82,7 +81,7 @@ const navItems: { key: string; icon: Component; label: string }[] = [
             :quaternary="currentRoute !== 'settings'"
             :focusable="false"
             circle
-            @click="navigateTo('settings')"
+            @click="router.push({ name: 'settings' })"
           >
             <template #icon>
               <n-icon>
@@ -92,17 +91,16 @@ const navItems: { key: string; icon: Component; label: string }[] = [
           </n-button>
         </div>
       </n-layout-header>
-
       <n-layout
         position="absolute"
         style="top: 56px"
-        content-style="padding: 24px; display: flex; flex-direction: column; min-height: 100%;"
+        content-style="padding: 16px; display: flex; flex-direction: column; min-height: 100%;"
         :native-scrollbar="false"
       >
         <div style="flex: 1">
-          <router-view v-slot="{ Component }">
+          <router-view v-slot="{ Component: RouteComponent }">
             <Transition name="fade-slide" mode="out-in">
-              <component :is="Component" />
+              <component :is="RouteComponent" />
             </Transition>
           </router-view>
         </div>
@@ -128,7 +126,7 @@ const navItems: { key: string; icon: Component; label: string }[] = [
               size="tiny"
               style="font-size: 12px"
             >
-              yt-dlp-gui
+              YDL GUI
             </n-button>
           </n-text>
         </n-flex>

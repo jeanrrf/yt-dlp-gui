@@ -19,6 +19,32 @@ const router = createRouter({
       component: () => import("@/pages/Downloads.vue"),
     },
     {
+      path: "/toolbox",
+      component: () => import("@/pages/Toolbox.vue"),
+      children: [
+        {
+          path: "",
+          name: "toolbox",
+          component: () => import("@/pages/toolbox/ToolList.vue"),
+        },
+        {
+          path: "thumbnail",
+          name: "toolbox-thumbnail",
+          component: () => import("@/pages/toolbox/Thumbnail.vue"),
+        },
+        {
+          path: "subtitles",
+          name: "toolbox-subtitles",
+          component: () => import("@/pages/toolbox/Subtitles.vue"),
+        },
+        {
+          path: "livechat",
+          name: "toolbox-livechat",
+          component: () => import("@/pages/toolbox/LiveChat.vue"),
+        },
+      ],
+    },
+    {
       path: "/settings",
       name: "settings",
       component: () => import("@/pages/Settings.vue"),

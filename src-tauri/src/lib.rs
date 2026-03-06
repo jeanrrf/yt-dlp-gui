@@ -26,6 +26,9 @@ pub fn run() {
             commands::cancel_download,
             commands::check_files_exist,
             commands::delete_file,
+            commands::tool_download_thumbnail,
+            commands::tool_download_subtitles,
+            commands::tool_download_live_chat,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
