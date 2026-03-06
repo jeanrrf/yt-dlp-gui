@@ -22,6 +22,12 @@ if (!videoStore.videoInfo) {
   router.replace({ name: "home" });
 }
 
+/** 将 Naive UI time picker 的时间戳值转换为当天秒数 */
+const timeToSeconds = (ts: number): number => {
+  const d = new Date(ts);
+  return d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds();
+};
+
 // 下载模式
 const downloadMode = ref<"default" | "video" | "audio">("default");
 
@@ -153,8 +159,8 @@ const handleDownload = async () => {
     recodeFormat: recodeFormat.value || null,
     limitRate: limitRate.value || null,
     subtitles: selectedSubtitles.value,
-    startTime: startTime.value,
-    endTime: endTime.value,
+    startTime: startTime.value != null ? timeToSeconds(startTime.value) : null,
+    endTime: endTime.value != null ? timeToSeconds(endTime.value) : null,
     noPlaylist: videoStore.isPlaylist && videoStore.selectedPlaylistItems.length === 1,
     playlistItems: videoStore.isPlaylist && videoStore.selectedPlaylistItems.length > 0
       ? videoStore.selectedPlaylistItems.sort((a, b) => a - b).join(",")

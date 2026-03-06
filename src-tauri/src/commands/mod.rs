@@ -48,6 +48,8 @@ pub struct DownloadProcessInfo {
     pub download_dir: String,
     /// 临时文件路径，用于存储 --print-to-file 写出的最终文件路径
     pub filepath_file: Option<String>,
+    /// 时间裁剪的片段时长（秒），用于计算 ffmpeg 处理进度
+    pub clip_duration: Option<f64>,
 }
 
 /// 下载状态管理（全局共享）

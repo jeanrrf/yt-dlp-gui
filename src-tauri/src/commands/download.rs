@@ -13,6 +13,21 @@ use super::{DownloadParams, DownloadProcessInfo, DownloadState};
 #[cfg(target_os = "windows")]
 use super::CREATE_NO_WINDOW;
 
+// ========== 辅助函数 ==========
+
+/// 将秒数格式化为 HH:MM:SS
+fn format_duration(secs: f64) -> String {
+    let total = secs as u64;
+    let h = total / 3600;
+    let m = (total % 3600) / 60;
+    let s = total % 60;
+    if h > 0 {
+        format!("{:02}:{:02}:{:02}", h, m, s)
+    } else {
+        format!("{:02}:{:02}", m, s)
+    }
+}
+
 // ========== 输出处理 ==========
 
 /// 处理 yt-dlp 的一行输出：解析进度并发送事件到前端
@@ -36,6 +51,31 @@ fn process_output_line(
             }),
         );
         return; // 进度行不需要转发到日志
+    }
+
+    // 解析 ffmpeg 输出中的 time= 字段（用于时间裁剪场景的进度）
+    if line.contains("time=") && line.contains("frame=") {
+        if let Some(current_secs) = parser::parse_ffmpeg_time(line) {
+            let clip_dur = processes
+                .lock()
+                .ok()
+                .and_then(|map| map.get(task_id).and_then(|info| info.clip_duration));
+            if let Some(duration) = clip_dur {
+                let percent = (current_secs / duration * 100.0).min(100.0);
+                let _ = app.emit(
+                    "download-progress",
+                    serde_json::json!({
+                        "id": task_id,
+                        "percent": percent,
+                        "speed": "",
+                        "eta": "",
+                        "downloaded": format_duration(current_secs),
+                        "total": format_duration(duration),
+                    }),
+                );
+            }
+        }
+        return; // ffmpeg 帧进度不转发到日志（太频繁）
     }
 
     // 跟踪输出文件路径（从 [download] Destination 等行解析，作为备选方案）
@@ -142,6 +182,13 @@ pub async fn start_download(
     let pid = child.id().ok_or("获取进程 ID 失败")?;
     let task_id = params.id.clone();
 
+    // 计算裁剪片段时长（用于 ffmpeg 进度计算）
+    let clip_duration = match (params.start_time, params.end_time) {
+        (Some(s), Some(e)) => Some(e - s),
+        (None, Some(e)) => Some(e),
+        _ => None,
+    };
+
     // 记录进程信息
     let processes = state.processes.clone();
     {
@@ -154,6 +201,7 @@ pub async fn start_download(
                 output_files: Vec::new(),
                 download_dir: params.download_dir.clone(),
                 filepath_file: Some(filepath_file),
+                clip_duration,
             },
         );
     }
@@ -321,6 +369,7 @@ fn build_download_args(app: &AppHandle, params: &DownloadParams) -> Result<Vec<S
     }
 
     // 时间范围裁剪（仅在有实际裁剪范围时添加，避免 *0-inf 触发不必要的 ffmpeg 处理）
+    // 前端已将 time picker 值转换为秒数
     let has_start = params.start_time.is_some_and(|t| t > 0.0);
     let has_end = params.end_time.is_some();
     if has_start || has_end {
@@ -350,6 +399,7 @@ fn build_download_args(app: &AppHandle, params: &DownloadParams) -> Result<Vec<S
 }
 
 /// 启动异步任务读取子进程输出流
+/// 同时处理 \n 和 \r 作为行分隔符（ffmpeg 进度输出使用 \r）
 fn spawn_output_reader<R: tokio::io::AsyncRead + Unpin + Send + 'static>(
     app: AppHandle,
     task_id: String,
@@ -357,18 +407,35 @@ fn spawn_output_reader<R: tokio::io::AsyncRead + Unpin + Send + 'static>(
     reader: R,
 ) {
     tokio::spawn(async move {
+        use tokio::io::AsyncReadExt;
         let mut buf_reader = tokio::io::BufReader::new(reader);
-        let mut buf = Vec::new();
+        let mut line_buf = Vec::with_capacity(1024);
+        let mut byte_buf = [0u8; 1];
+
         loop {
-            buf.clear();
-            match tokio::io::AsyncBufReadExt::read_until(&mut buf_reader, b'\n', &mut buf).await {
-                Ok(0) => break,
-                Ok(_) => {
-                    let line = String::from_utf8_lossy(&buf).trim().to_string();
-                    if line.is_empty() {
-                        continue;
+            match buf_reader.read(&mut byte_buf).await {
+                Ok(0) => {
+                    // EOF：处理缓冲区中剩余的内容
+                    if !line_buf.is_empty() {
+                        let line = String::from_utf8_lossy(&line_buf).trim().to_string();
+                        if !line.is_empty() {
+                            process_output_line(&app, &task_id, &processes, &line);
+                        }
                     }
-                    process_output_line(&app, &task_id, &processes, &line);
+                    break;
+                }
+                Ok(_) => {
+                    if byte_buf[0] == b'\n' || byte_buf[0] == b'\r' {
+                        if !line_buf.is_empty() {
+                            let line = String::from_utf8_lossy(&line_buf).trim().to_string();
+                            if !line.is_empty() {
+                                process_output_line(&app, &task_id, &processes, &line);
+                            }
+                            line_buf.clear();
+                        }
+                    } else {
+                        line_buf.push(byte_buf[0]);
+                    }
                 }
                 Err(_) => break,
             }

@@ -124,18 +124,18 @@ const audioConvertOptions = [
   { label: "M4A", value: "m4a" },
 ];
 
-/** 开始时间变化时，若结束时间早于等于开始时间则清空 */
+/** 开始时间变化时，若结束时间未选择或早于等于开始时间则自动设为开始时间 + 1 分钟 */
 watch(startTime, (val) => {
-  if (val != null && endTime.value != null && endTime.value <= val) {
-    endTime.value = null;
+  if (val != null && (endTime.value == null || endTime.value <= val)) {
+    endTime.value = val + 60000;
   }
 });
 
-/** 结束时间变化时，若早于等于开始时间则清空并提示 */
+/** 结束时间变化时，若早于等于开始时间则自动修正为开始时间 + 1 分钟 */
 watch(endTime, (val) => {
   if (val != null && startTime.value != null && val <= startTime.value) {
-    endTime.value = null;
-    window.$message.warning("结束时间不能早于或等于开始时间");
+    endTime.value = startTime.value + 60000;
+    window.$message.warning("结束时间不能早于或等于开始时间，已自动调整");
   }
 });
 </script>

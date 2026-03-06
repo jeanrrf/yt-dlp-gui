@@ -37,6 +37,26 @@ pub fn parse_progress_json(line: &str) -> Option<ProgressInfo> {
     })
 }
 
+/// 解析 ffmpeg 输出中的 time= 字段，返回已处理的秒数
+/// 格式: frame= 1234 fps=128 ... time=00:02:29.65 ...
+pub fn parse_ffmpeg_time(line: &str) -> Option<f64> {
+    let time_start = line.find("time=")?;
+    let after = &line[time_start + 5..];
+    let time_str = after.split_whitespace().next()?;
+    // 格式: HH:MM:SS.xx 或 -HH:MM:SS.xx (负值表示尚未开始)
+    if time_str.starts_with('-') || time_str == "N/A" {
+        return None;
+    }
+    let parts: Vec<&str> = time_str.split(':').collect();
+    if parts.len() != 3 {
+        return None;
+    }
+    let h: f64 = parts[0].parse().ok()?;
+    let m: f64 = parts[1].parse().ok()?;
+    let s: f64 = parts[2].parse().ok()?;
+    Some(h * 3600.0 + m * 60.0 + s)
+}
+
 /// 清理 yt-dlp 输出字段：移除 NA/Unknown 等无效值
 fn clean_field(s: Option<&str>) -> String {
     match s {
