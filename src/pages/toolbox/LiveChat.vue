@@ -18,6 +18,7 @@ const saving = ref(false);
 const messages = ref<LiveChatMessage[]>([]);
 const checkedKeys = ref<DataTableRowKey[]>([]);
 const filterText = ref("");
+const debouncedFilter = refDebounced(filterText, 300);
 const useRegex = ref(false);
 
 const urlValid = computed(() => isValidUrl(toolUrl.value.trim()));
@@ -57,7 +58,7 @@ const typeLabels: Record<string, string> = {
 
 // 筛选：关键词或正则
 const filterRegex = computed(() => {
-  const text = filterText.value.trim();
+  const text = debouncedFilter.value.trim();
   if (!text) return null;
   if (useRegex.value) {
     try {
@@ -87,8 +88,8 @@ const filteredMessages = computed(() => {
   );
 });
 
-// 筛选变化时清空选中
-watch(filterText, () => {
+// 筛选结果变化时清空选中
+watch(debouncedFilter, () => {
   checkedKeys.value = [];
 });
 

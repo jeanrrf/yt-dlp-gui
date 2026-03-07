@@ -592,10 +592,13 @@ pub async fn tool_fetch_live_chat(
     #[cfg(target_os = "windows")]
     cmd.creation_flags(CREATE_NO_WINDOW);
 
-    let output = cmd
-        .output()
-        .await
-        .map_err(|e| format!("运行 yt-dlp 失败: {}", e))?;
+    let output = match cmd.output().await {
+        Ok(output) => output,
+        Err(e) => {
+            let _ = tokio::fs::remove_dir_all(&temp_dir).await;
+            return Err(format!("运行 yt-dlp 失败: {}", e));
+        }
+    };
 
     if !output.status.success() {
         let _ = tokio::fs::remove_dir_all(&temp_dir).await;
@@ -609,9 +612,18 @@ pub async fn tool_fetch_live_chat(
         return Err(msg);
     }
 
-    // 查找 live_chat.json 文件
+    // 解析完成后统一清理临时目录
+    let result = parse_live_chat_dir(&temp_dir).await;
+    let _ = tokio::fs::remove_dir_all(&temp_dir).await;
+    result
+}
+
+/// 从临时目录中查找并解析 live_chat 文件
+async fn parse_live_chat_dir(
+    dir: &std::path::Path,
+) -> Result<Vec<LiveChatMessage>, String> {
     let mut chat_file = None;
-    let mut entries = tokio::fs::read_dir(&temp_dir)
+    let mut entries = tokio::fs::read_dir(dir)
         .await
         .map_err(|e| format!("读取临时目录失败: {}", e))?;
 
@@ -630,12 +642,9 @@ pub async fn tool_fetch_live_chat(
     let chat_file =
         chat_file.ok_or("未找到弹幕数据文件，该视频可能没有直播弹幕".to_string())?;
 
-    // 读取并解析 JSONL
     let content = tokio::fs::read_to_string(&chat_file)
         .await
         .map_err(|e| format!("读取弹幕文件失败: {}", e))?;
-
-    let _ = tokio::fs::remove_dir_all(&temp_dir).await;
 
     let mut messages: Vec<LiveChatMessage> = content
         .lines()

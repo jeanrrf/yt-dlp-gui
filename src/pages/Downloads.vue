@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { NCheckbox, NFlex, NLog } from "naive-ui";
+import { NCheckbox, NFlex, NLog, type LogInst } from "naive-ui";
 import { revealItemInDir } from "@tauri-apps/plugin-opener";
 import { invoke } from "@tauri-apps/api/core";
 import { useDownloadStore } from "@/stores/download";
@@ -71,6 +71,28 @@ const toggleLog = (id: string) => {
 const logContent = (task: DownloadTask) => {
   return task.logs.join("\n") || "暂无日志...";
 };
+
+// 日志自动滚动到底部
+const logRefs = new Map<string, LogInst>();
+const setLogRef = (id: string) => (el: unknown) => {
+  if (el) logRefs.set(id, el as LogInst);
+  else logRefs.delete(id);
+};
+
+watch(
+  () =>
+    [...expandedLogs].map((id) => {
+      const task = downloadStore.tasks.find((t) => t.id === id);
+      return task ? task.logs.length : 0;
+    }),
+  () => {
+    nextTick(() => {
+      for (const id of expandedLogs) {
+        logRefs.get(id)?.scrollTo({ position: "bottom", silent: true });
+      }
+    });
+  },
+);
 
 // ========== 进度条状态 ==========
 type ProgressStatus = "default" | "success" | "error" | "warning";
@@ -450,6 +472,7 @@ const handleClearFinished = () => {
                   <n-collapse-transition :show="expandedLogs.has(task.id)">
                     <div class="task-log">
                       <n-log
+                        :ref="setLogRef(task.id)"
                         :log="logContent(task)"
                         :rows="8"
                         :font-size="12"
@@ -620,6 +643,7 @@ const handleClearFinished = () => {
                   <n-collapse-transition :show="expandedLogs.has(task.id)">
                     <div class="task-log">
                       <n-log
+                        :ref="setLogRef(task.id)"
                         :log="logContent(task)"
                         :rows="8"
                         :font-size="12"

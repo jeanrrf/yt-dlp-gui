@@ -409,6 +409,7 @@ fn spawn_output_reader<R: tokio::io::AsyncRead + Unpin + Send + 'static>(
     tokio::spawn(async move {
         use tokio::io::AsyncReadExt;
         let mut buf_reader = tokio::io::BufReader::new(reader);
+        const MAX_LINE_LEN: usize = 64 * 1024; // 64KB
         let mut line_buf = Vec::with_capacity(1024);
         let mut byte_buf = [0u8; 1];
 
@@ -433,7 +434,7 @@ fn spawn_output_reader<R: tokio::io::AsyncRead + Unpin + Send + 'static>(
                             }
                             line_buf.clear();
                         }
-                    } else {
+                    } else if line_buf.len() < MAX_LINE_LEN {
                         line_buf.push(byte_buf[0]);
                     }
                 }
