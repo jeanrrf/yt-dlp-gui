@@ -13,6 +13,7 @@ interface ToolItem {
   bg: string;
   title: string;
   desc: string;
+  tag?: string;
 }
 
 const tools: ToolItem[] = [
@@ -39,6 +40,7 @@ const tools: ToolItem[] = [
     bg: "rgba(240,160,32,0.1)",
     title: "获取直播弹幕",
     desc: "获取直播回放的聊天记录 / 弹幕数据",
+    tag: "仅 YouTube",
   },
 ];
 
@@ -64,7 +66,12 @@ const navigateTo = (key: string) => {
           </n-icon>
         </div>
         <div class="tool-info">
-          <n-text strong>{{ tool.title }}</n-text>
+          <n-flex align="center" :size="6">
+            <n-text strong>{{ tool.title }}</n-text>
+            <n-tag v-if="tool.tag" size="small" round :bordered="false" type="warning">
+              {{ tool.tag }}
+            </n-tag>
+          </n-flex>
           <n-text depth="3" class="tool-desc">{{ tool.desc }}</n-text>
         </div>
         <n-button type="primary" secondary size="small" @click.stop="navigateTo(tool.key)">

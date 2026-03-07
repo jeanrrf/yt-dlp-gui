@@ -34,7 +34,7 @@ pub fn run() {
             commands::tool_save_subtitle,
             commands::tool_download_text,
             commands::tool_save_text_to_file,
-            commands::tool_download_live_chat,
+            commands::tool_fetch_live_chat,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

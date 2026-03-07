@@ -1,6 +1,7 @@
 import { defineStore } from "pinia";
 import { invoke } from "@tauri-apps/api/core";
 import { useSettingStore } from "@/stores/setting";
+import { useStatusStore } from "@/stores/status";
 import type { VideoInfo, VideoFormat, PlaylistEntry } from "@/types";
 
 export const useVideoStore = defineStore("video", () => {
@@ -81,9 +82,13 @@ export const useVideoStore = defineStore("video", () => {
 
       return true;
     } catch (e: unknown) {
-      window.$message.error(
-        e instanceof Error ? e.message : String(e) || "获取视频信息失败",
-      );
+      const msg = e instanceof Error ? e.message : String(e) || "获取视频信息失败";
+      if (/sign in|cookies/i.test(msg)) {
+        const statusStore = useStatusStore();
+        statusStore.showCookieModal = true;
+      } else {
+        window.$message.error(msg);
+      }
       return false;
     } finally {
       fetching.value = false;

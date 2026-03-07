@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import CookieModal from "@/components/CookieModal.vue";
 import IconMdiHome from "~icons/mdi/home";
 import IconMdiDownload from "~icons/mdi/download";
 import IconMdiToolbox from "~icons/mdi/toolbox";
@@ -28,6 +29,7 @@ onMounted(() => {
 
 <template>
   <Provider>
+    <CookieModal />
     <n-layout style="height: 100vh">
       <n-layout-header bordered class="app-header">
         <!-- 左侧 Logo -->

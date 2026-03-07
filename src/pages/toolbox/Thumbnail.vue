@@ -3,10 +3,12 @@ import { invoke } from "@tauri-apps/api/core";
 import { save } from "@tauri-apps/plugin-dialog";
 import { isValidUrl } from "@/utils/validate";
 import { useSettingStore } from "@/stores/setting";
+import { useStatusStore } from "@/stores/status";
 import { useVideoStore } from "@/stores/video";
 import type { ThumbnailInfo, VideoInfo } from "@/types";
 
 const settingStore = useSettingStore();
+const statusStore = useStatusStore();
 const videoStore = useVideoStore();
 const toolUrl = inject<Ref<string>>("toolUrl")!;
 
@@ -70,7 +72,12 @@ const handleFetch = async () => {
       window.$message.warning("未找到封面图片");
     }
   } catch (e: unknown) {
-    window.$message.error(`获取失败: ${e}`);
+    const msg = String(e);
+    if (/sign in|cookies/i.test(msg)) {
+      statusStore.showCookieModal = true;
+    } else {
+      window.$message.error(`获取失败: ${msg}`);
+    }
   } finally {
     loading.value = false;
   }

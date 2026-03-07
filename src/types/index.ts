@@ -127,6 +127,17 @@ export interface VideoInfo {
   playlist_count?: number;
 }
 
+export interface LiveChatMessage {
+  idx: number;
+  time: string;
+  timestamp_usec: number;
+  author: string;
+  channel_id: string;
+  message: string;
+  msg_type: string;
+  amount: string;
+}
+
 export interface SubtitleTrack {
   ext: string;
   url: string;
