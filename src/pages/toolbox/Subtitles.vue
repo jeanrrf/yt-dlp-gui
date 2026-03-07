@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { invoke } from "@tauri-apps/api/core";
 import { save } from "@tauri-apps/plugin-dialog";
+import { formatError } from "@/utils/format";
 import { isValidUrl } from "@/utils/validate";
 import { mergeBilingualSrt, mergeBilingualVtt } from "@/utils/subtitle";
 import { useSettingStore } from "@/stores/setting";
@@ -121,7 +122,7 @@ const handleFetch = async () => {
     if (/sign in|cookies/i.test(msg)) {
       statusStore.showCookieModal = true;
     } else {
-      window.$message.error(`获取失败: ${msg}`);
+      window.$message.error(formatError(msg));
     }
   } finally {
     loading.value = false;
