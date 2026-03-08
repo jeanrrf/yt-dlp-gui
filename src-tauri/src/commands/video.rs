@@ -35,9 +35,10 @@ pub async fn fetch_video_info(
     }
 
     let mut args = vec![
-        "-J".to_string(),               // -J 已隐含 simulate，无需 --no-download
-        "--ignore-config".to_string(),   // 忽略用户系统配置
-        "--color".to_string(), "never".to_string(),
+        "-J".to_string(),              // -J 已隐含 simulate，无需 --no-download
+        "--ignore-config".to_string(), // 忽略用户系统配置
+        "--color".to_string(),
+        "never".to_string(),
     ];
     args.extend(utils::build_js_runtime_args(&app));
 
@@ -73,17 +74,16 @@ pub async fn fetch_video_info(
     let stdout = String::from_utf8_lossy(&output.stdout);
 
     // 优先从 stdout 解析 JSON（yt-dlp 可能在 stderr 输出警告但仍成功）
-    if let Some(json_str) = stdout.lines().find(|line| line.trim_start().starts_with('{')) {
-        return serde_json::from_str(json_str)
-            .map_err(|e| format!("err_parse_video_info:{}", e));
+    if let Some(json_str) = stdout
+        .lines()
+        .find(|line| line.trim_start().starts_with('{'))
+    {
+        return serde_json::from_str(json_str).map_err(|e| format!("err_parse_video_info:{}", e));
     }
 
     // 未找到 JSON，从 stderr 提取 ERROR 行作为错误信息
     let stderr = String::from_utf8_lossy(&output.stderr);
-    let error_lines: Vec<&str> = stderr
-        .lines()
-        .filter(|l| l.contains("ERROR:"))
-        .collect();
+    let error_lines: Vec<&str> = stderr.lines().filter(|l| l.contains("ERROR:")).collect();
     let msg = if error_lines.is_empty() {
         stderr.trim().to_string()
     } else {

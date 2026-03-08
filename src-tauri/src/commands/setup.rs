@@ -6,7 +6,7 @@ use std::process::Stdio;
 use tauri::{AppHandle, Emitter};
 use tokio::io::AsyncBufReadExt;
 
-use super::{YtdlpStatus, DenoStatus};
+use super::{DenoStatus, YtdlpStatus};
 
 #[cfg(target_os = "windows")]
 use super::CREATE_NO_WINDOW;
@@ -134,9 +134,7 @@ pub async fn update_ytdlp(app: AppHandle) -> Result<String, String> {
 
     cmd.stdout(Stdio::piped()).stderr(Stdio::piped());
 
-    let mut child = cmd
-        .spawn()
-        .map_err(|e| format!("err_start_update:{}", e))?;
+    let mut child = cmd.spawn().map_err(|e| format!("err_start_update:{}", e))?;
 
     let stdout = child.stdout.take().ok_or("err_capture_stdout")?;
     let stderr = child.stderr.take().ok_or("err_capture_stderr")?;
@@ -289,10 +287,9 @@ pub async fn download_deno(app: AppHandle) -> Result<(), String> {
     };
 
     tokio::task::spawn_blocking(move || {
-        let file = std::fs::File::open(&zip_path_clone)
-            .map_err(|e| format!("err_open_zip:{}", e))?;
-        let mut archive =
-            zip::ZipArchive::new(file).map_err(|e| format!("err_read_zip:{}", e))?;
+        let file =
+            std::fs::File::open(&zip_path_clone).map_err(|e| format!("err_open_zip:{}", e))?;
+        let mut archive = zip::ZipArchive::new(file).map_err(|e| format!("err_read_zip:{}", e))?;
 
         for i in 0..archive.len() {
             let mut entry = archive

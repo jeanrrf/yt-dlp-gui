@@ -447,16 +447,15 @@ fn parse_live_chat_line(line: &str) -> Option<LiveChatMessage> {
     for action in actions {
         let item = action.pointer("/addChatItemAction/item")?;
 
-        let (renderer, msg_type) =
-            if let Some(r) = item.get("liveChatTextMessageRenderer") {
-                (r, "text")
-            } else if let Some(r) = item.get("liveChatPaidMessageRenderer") {
-                (r, "paid")
-            } else if let Some(r) = item.get("liveChatMembershipItemRenderer") {
-                (r, "membership")
-            } else {
-                continue;
-            };
+        let (renderer, msg_type) = if let Some(r) = item.get("liveChatTextMessageRenderer") {
+            (r, "text")
+        } else if let Some(r) = item.get("liveChatPaidMessageRenderer") {
+            (r, "paid")
+        } else if let Some(r) = item.get("liveChatMembershipItemRenderer") {
+            (r, "membership")
+        } else {
+            continue;
+        };
 
         let author = renderer
             .pointer("/authorName/simpleText")
@@ -619,9 +618,7 @@ pub async fn tool_fetch_live_chat(
 }
 
 /// 从临时目录中查找并解析 live_chat 文件
-async fn parse_live_chat_dir(
-    dir: &std::path::Path,
-) -> Result<Vec<LiveChatMessage>, String> {
+async fn parse_live_chat_dir(dir: &std::path::Path) -> Result<Vec<LiveChatMessage>, String> {
     let mut chat_file = None;
     let mut entries = tokio::fs::read_dir(dir)
         .await
@@ -639,17 +636,14 @@ async fn parse_live_chat_dir(
         }
     }
 
-    let chat_file =
-        chat_file.ok_or("err_livechat_not_found".to_string())?;
+    let chat_file = chat_file.ok_or("err_livechat_not_found".to_string())?;
 
     let content = tokio::fs::read_to_string(&chat_file)
         .await
         .map_err(|e| format!("err_read_livechat:{}", e))?;
 
-    let mut messages: Vec<LiveChatMessage> = content
-        .lines()
-        .filter_map(parse_live_chat_line)
-        .collect();
+    let mut messages: Vec<LiveChatMessage> =
+        content.lines().filter_map(parse_live_chat_line).collect();
 
     for (i, msg) in messages.iter_mut().enumerate() {
         msg.idx = i;

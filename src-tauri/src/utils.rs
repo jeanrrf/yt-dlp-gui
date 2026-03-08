@@ -7,8 +7,7 @@ pub fn get_ytdlp_path(app: &AppHandle) -> Result<PathBuf, String> {
         .path()
         .app_data_dir()
         .map_err(|e| format!("err_app_data_dir:{}", e))?;
-    std::fs::create_dir_all(&app_data)
-        .map_err(|e| format!("err_create_dir:{}", e))?;
+    std::fs::create_dir_all(&app_data).map_err(|e| format!("err_create_dir:{}", e))?;
 
     if cfg!(target_os = "windows") {
         Ok(app_data.join("yt-dlp.exe"))
