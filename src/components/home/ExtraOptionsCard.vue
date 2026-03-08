@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { useSettingStore } from "@/stores/setting";
+import { useI18n } from "vue-i18n";
 
+const { t } = useI18n();
 const settingStore = useSettingStore();
 
 const startTime = defineModel<number | null>("startTime", {
@@ -32,34 +34,31 @@ const noMerge = defineModel<boolean>("noMerge", { required: true });
 const recodeFormat = defineModel<string>("recodeFormat", { required: true });
 const limitRate = defineModel<string>("limitRate", { required: true });
 
-// 文件名模板预设
 const DEFAULT_TEMPLATE = "%(title).200s.%(ext)s";
-const outputTemplatePresets = [
-  { label: "默认", value: DEFAULT_TEMPLATE },
-  { label: "标题 + 画质", value: "%(title).200s [%(height)sp].%(ext)s" },
-  { label: "作者 - 标题", value: "%(uploader)s - %(title).200s.%(ext)s" },
-  { label: "日期 - 标题", value: "%(upload_date)s - %(title).200s.%(ext)s" },
-  { label: "标题 + ID", value: "%(title).200s [%(id)s].%(ext)s" },
-  { label: "自定义", value: "__custom__" },
-];
+const outputTemplatePresets = computed(() => [
+  { label: t("common.default"), value: DEFAULT_TEMPLATE },
+  { label: t("detail.titleQuality"), value: "%(title).200s [%(height)sp].%(ext)s" },
+  { label: t("detail.authorTitle"), value: "%(uploader)s - %(title).200s.%(ext)s" },
+  { label: t("detail.dateTitle"), value: "%(upload_date)s - %(title).200s.%(ext)s" },
+  { label: t("detail.titleId"), value: "%(title).200s [%(id)s].%(ext)s" },
+  { label: t("detail.custom"), value: "__custom__" },
+]);
 
-// 可快速插入的模板变量（扩展名由 yt-dlp 自动处理，不允许自定义）
-const templateVars = [
-  { label: "标题", value: "%(title)s" },
-  { label: "作者", value: "%(uploader)s" },
-  { label: "日期", value: "%(upload_date)s" },
-  { label: "ID", value: "%(id)s" },
-  { label: "画质", value: "%(height)sp" },
-  { label: "分辨率", value: "%(resolution)s" },
-  { label: "时长", value: "%(duration)s" },
-];
+const templateVars = computed(() => [
+  { label: t("detail.tplTitle"), value: "%(title)s" },
+  { label: t("detail.tplAuthor"), value: "%(uploader)s" },
+  { label: t("detail.tplDate"), value: "%(upload_date)s" },
+  { label: t("detail.tplId"), value: "%(id)s" },
+  { label: t("detail.tplQuality"), value: "%(height)sp" },
+  { label: t("detail.tplResolution"), value: "%(resolution)s" },
+  { label: t("detail.tplDuration"), value: "%(duration)s" },
+]);
 
 const EXT_SUFFIX = ".%(ext)s";
 
-// 当前选中的预设值，"__custom__" 表示自定义模式
 const getInitialPreset = () => {
   const cur = settingStore.outputTemplate;
-  const match = outputTemplatePresets.find(
+  const match = outputTemplatePresets.value.find(
     (p) => p.value !== "__custom__" && p.value === cur,
   );
   return match ? cur : "__custom__";
@@ -75,7 +74,6 @@ const handleTemplateSelect = (val: string) => {
   }
 };
 
-// 编辑的是不含扩展名后缀的部分
 const templateBase = computed({
   get: () => {
     const cur = settingStore.outputTemplate;
@@ -96,33 +94,33 @@ const insertVar = (v: string) => {
   templateBase.value = templateBase.value + " " + v;
 };
 
-const recodeOptions = [
-  { label: "不转换", value: "" },
+const recodeOptions = computed(() => [
+  { label: t("detail.noConversion"), value: "" },
   { label: "MP4", value: "mp4" },
   { label: "MKV", value: "mkv" },
   { label: "WebM", value: "webm" },
   { label: "MP3", value: "mp3" },
   { label: "FLAC", value: "flac" },
-];
+]);
 
-const limitRateOptions = [
-  { label: "不限速", value: "" },
+const limitRateOptions = computed(() => [
+  { label: t("detail.noLimit"), value: "" },
   { label: "500K/s", value: "500K" },
   { label: "1M/s", value: "1M" },
   { label: "2M/s", value: "2M" },
   { label: "5M/s", value: "5M" },
   { label: "10M/s", value: "10M" },
-];
+]);
 
-const audioConvertOptions = [
-  { label: "不转换", value: "" },
+const audioConvertOptions = computed(() => [
+  { label: t("detail.noConversion"), value: "" },
   { label: "MP3", value: "mp3" },
   { label: "FLAC", value: "flac" },
   { label: "WAV", value: "wav" },
   { label: "AAC", value: "aac" },
   { label: "OPUS", value: "opus" },
   { label: "M4A", value: "m4a" },
-];
+]);
 
 /** 开始时间变化时，若结束时间未选择或早于等于开始时间则自动设为开始时间 + 1 分钟 */
 watch(startTime, (val) => {
@@ -135,17 +133,16 @@ watch(startTime, (val) => {
 watch(endTime, (val) => {
   if (val != null && startTime.value != null && val <= startTime.value) {
     endTime.value = startTime.value + 60000;
-    window.$message.warning("结束时间不能早于或等于开始时间，已自动调整");
+    window.$message.warning(t("detail.endTimeAdjusted"));
   }
 });
 </script>
 
 <template>
-  <n-card title="额外选项" size="small">
+  <n-card :title="$t('detail.extraOptions')" size="small">
     <n-flex vertical :size="14">
-      <!-- 文件名模板 -->
-      <div class="option-grid">
-        <span class="option-label">文件名</span>
+      <n-flex align="center" :size="8">
+        <span class="option-label">{{ $t('detail.filename') }}</span>
         <n-flex vertical :size="6" style="flex: 1; min-width: 0">
           <n-select
             :value="selectedPreset"
@@ -186,15 +183,14 @@ watch(endTime, (val) => {
             </n-flex>
           </template>
         </n-flex>
-      </div>
+      </n-flex>
 
-      <!-- 时间裁剪 -->
-      <div class="option-grid">
-        <span class="option-label">时间裁剪</span>
+      <n-flex align="center" :size="8">
+        <span class="option-label">{{ $t('detail.timeTrim') }}</span>
         <n-flex align="center" :size="8">
           <n-time-picker
             v-model:value="startTime"
-            placeholder="开始"
+            :placeholder="$t('detail.start')"
             size="small"
             clearable
             format="HH:mm:ss"
@@ -204,7 +200,7 @@ watch(endTime, (val) => {
           <n-text depth="3">—</n-text>
           <n-time-picker
             v-model:value="endTime"
-            placeholder="结束"
+            :placeholder="$t('detail.end')"
             size="small"
             clearable
             format="HH:mm:ss"
@@ -212,34 +208,32 @@ watch(endTime, (val) => {
             :actions="[]"
           />
         </n-flex>
-      </div>
+      </n-flex>
 
-      <!-- 格式与限速 -->
       <n-flex :size="16" wrap>
-        <div class="option-grid">
-          <span class="option-label">转换格式</span>
+        <n-flex align="center" :size="8">
+          <span class="option-label">{{ $t('detail.recodeFormat') }}</span>
           <n-select
             v-model:value="recodeFormat"
             :options="recodeOptions"
             size="small"
             style="width: 110px"
           />
-        </div>
-        <div class="option-grid">
-          <span class="option-label">下载限速</span>
+        </n-flex>
+        <n-flex align="center" :size="8">
+          <span class="option-label">{{ $t('detail.speedLimit') }}</span>
           <n-select
             v-model:value="limitRate"
             :options="limitRateOptions"
             size="small"
             style="width: 110px"
           />
-        </div>
+        </n-flex>
       </n-flex>
 
-      <!-- 提取音频 -->
-      <div class="option-grid">
+      <n-flex align="center" :size="8">
         <n-checkbox v-model:checked="extractAudio" size="small">
-          提取音频
+          {{ $t('detail.extractAudio') }}
         </n-checkbox>
         <n-select
           v-model:value="audioConvertFormat"
@@ -247,31 +241,30 @@ watch(endTime, (val) => {
           :style="{ visibility: extractAudio ? 'visible' : 'hidden' }"
           size="small"
           style="width: 110px"
-          placeholder="音频格式"
+          :placeholder="$t('detail.audioFormat')"
         />
-      </div>
+      </n-flex>
 
       <n-divider style="margin: 0" />
 
-      <!-- 开关选项 -->
       <n-flex :size="[16, 8]" wrap>
         <n-checkbox v-model:checked="embedSubs" size="small">
-          嵌入字幕
+          {{ $t('detail.embedSubs') }}
         </n-checkbox>
         <n-checkbox v-model:checked="embedThumbnail" size="small">
-          嵌入缩略图
+          {{ $t('detail.embedThumbnail') }}
         </n-checkbox>
         <n-checkbox v-model:checked="embedMetadata" size="small">
-          嵌入元数据
+          {{ $t('detail.embedMetadata') }}
         </n-checkbox>
         <n-checkbox v-model:checked="embedChapters" size="small">
-          嵌入章节
+          {{ $t('detail.embedChapters') }}
         </n-checkbox>
         <n-checkbox v-model:checked="sponsorblockRemove" size="small">
-          跳过赞助片段
+          {{ $t('detail.skipSponsor') }}
         </n-checkbox>
         <n-checkbox v-model:checked="noMerge" size="small">
-          不合并音视频
+          {{ $t('detail.noMerge') }}
         </n-checkbox>
       </n-flex>
     </n-flex>
@@ -279,12 +272,6 @@ watch(endTime, (val) => {
 </template>
 
 <style scoped lang="scss">
-.option-grid {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
 .option-label {
   font-size: 13px;
   color: var(--n-text-color-3, #999);

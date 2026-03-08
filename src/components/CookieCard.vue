@@ -2,28 +2,30 @@
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import { useSettingStore } from "@/stores/setting";
+import { useI18n } from "vue-i18n";
 
+const { t } = useI18n();
 const settingStore = useSettingStore();
 
-const cookieModeOptions = [
-  { label: "不使用", value: "none" },
-  { label: "手动输入", value: "text" },
-  { label: "Cookie 文件", value: "file" },
-];
+const cookieModeOptions = computed(() => [
+  { label: t("cookie.none"), value: "none" },
+  { label: t("cookie.manual"), value: "text" },
+  { label: t("cookie.file"), value: "file" },
+]);
 
 /** 保存 Cookie 文本到应用数据目录 */
 const handleSaveCookieText = async () => {
   if (!settingStore.cookieText.trim()) {
-    window.$message.warning("Cookie 内容为空");
+    window.$message.warning(t("cookie.emptyContent"));
     return;
   }
   try {
     const path = await invoke<string>("save_cookie_text", {
       text: settingStore.cookieText,
     });
-    window.$message.success(`Cookie 已保存至 ${path}`);
+    window.$message.success(t("cookie.savedTo", { path }));
   } catch (e: unknown) {
-    window.$message.error(`保存失败: ${e}`);
+    window.$message.error(t("common.saveFailed", { e }));
   }
 };
 
@@ -31,10 +33,10 @@ const handleSaveCookieText = async () => {
 const handleSelectFile = async () => {
   const selected = await open({
     multiple: false,
-    title: "选择 Cookie 文件",
+    title: t("cookie.selectFile"),
     filters: [
-      { name: "Cookie 文件", extensions: ["txt", "cookie", "cookies"] },
-      { name: "所有文件", extensions: ["*"] },
+      { name: t("cookie.cookieFiles"), extensions: ["txt", "cookie", "cookies"] },
+      { name: t("cookie.allFiles"), extensions: ["*"] },
     ],
   });
   if (selected) {
@@ -47,7 +49,7 @@ const handleSelectFile = async () => {
   <n-card title="Cookie" size="small">
     <n-flex vertical :size="12">
       <n-text depth="3" style="font-size: 13px">
-        部分视频需要登录后才能下载，可通过 Cookie 实现身份验证
+        {{ $t('cookie.desc') }}
       </n-text>
 
       <n-radio-group v-model:value="settingStore.cookieMode" size="small">
@@ -60,12 +62,11 @@ const handleSelectFile = async () => {
         </n-radio-button>
       </n-radio-group>
 
-      <!-- 手动输入模式 -->
       <template v-if="settingStore.cookieMode === 'text'">
         <n-input
           v-model:value="settingStore.cookieText"
           type="textarea"
-          placeholder="粘贴 Netscape 格式的 Cookie 内容..."
+          :placeholder="$t('cookie.textPlaceholder')"
           :autosize="{ minRows: 3, maxRows: 8 }"
           size="small"
         />
@@ -80,17 +81,16 @@ const handleSelectFile = async () => {
                 <icon-mdi-content-save-outline />
               </n-icon>
             </template>
-            保存
+            {{ $t('common.save') }}
           </n-button>
         </n-flex>
       </template>
 
-      <!-- 文件模式 -->
       <template v-if="settingStore.cookieMode === 'file'">
         <n-flex align="center" :size="8">
           <n-input
             :value="settingStore.cookieFile"
-            placeholder="未选择文件"
+            :placeholder="$t('cookie.noFileSelected')"
             size="small"
             readonly
             style="flex: 1"
@@ -101,7 +101,7 @@ const handleSelectFile = async () => {
                 <icon-mdi-file-search-outline />
               </n-icon>
             </template>
-            选择
+            {{ $t('common.select') }}
           </n-button>
         </n-flex>
       </template>

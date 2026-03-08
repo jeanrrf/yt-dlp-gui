@@ -3,14 +3,15 @@ import { readText } from "@tauri-apps/plugin-clipboard-manager";
 import { isValidUrl } from "@/utils/validate";
 import { useVideoStore } from "@/stores/video";
 import { useHistoryStore } from "@/stores/history";
+import { useI18n } from "vue-i18n";
 
+const { t, tm } = useI18n();
 const router = useRouter();
 const videoStore = useVideoStore();
 const historyStore = useHistoryStore();
 
 const url = ref("");
 
-// ========== 历史记录 ==========
 const historyIndex = ref(-1);
 const showHistory = ref(false);
 
@@ -50,41 +51,31 @@ const selectHistory = (item: string) => {
   historyIndex.value = -1;
 };
 
-// ========== 剪贴板 ==========
 const handlePaste = async () => {
   try {
     const text = await readText();
     const trimmed = text.trim();
     if (!trimmed) {
-      window.$message.warning("剪贴板为空");
+      window.$message.warning(t("clipboard.empty"));
       return;
     }
     if (!isValidUrl(trimmed)) {
-      window.$message.warning("剪贴板内容不是有效的链接");
+      window.$message.warning(t("clipboard.invalidUrl"));
       return;
     }
     url.value = trimmed;
     historyIndex.value = -1;
   } catch {
-    window.$message.warning("无法读取剪贴板");
+    window.$message.warning(t("clipboard.readFailed"));
   }
 };
-
-// ========== 提示文本 ==========
-const tips = [
-  "遇到下载问题？请前往设置中填写 Cookie 或更新 yt-dlp 版本",
-  "支持 YouTube、Bilibili、Twitter 等上千个网站",
-  "可选仅视频或仅音频模式，按需下载",
-  "下载前请确保已设置下载目录",
-  "YouTube 视频建议安装 Deno 运行时以获取完整格式列表",
-  "可使用键盘 上 / 下 键来选择历史解析记录",
-];
 
 const currentTipIndex = ref(0);
 let tipTimer: ReturnType<typeof setInterval> | null = null;
 
 onMounted(() => {
   tipTimer = setInterval(() => {
+    const tips = tm("home.tips");
     currentTipIndex.value = (currentTipIndex.value + 1) % tips.length;
   }, 4000);
 });
@@ -98,7 +89,7 @@ const handleSearch = async () => {
   const trimmed = url.value.trim();
   if (!trimmed) return;
   if (!isValidUrl(trimmed)) {
-    window.$message.warning("请输入有效的网址");
+    window.$message.warning(t("home.enterValidUrl"));
     return;
   }
   const success = await videoStore.fetchVideoInfo(trimmed);
@@ -111,20 +102,20 @@ const handleSearch = async () => {
 
 <template>
   <div class="home-page">
-    <div class="search-view">
-      <div class="search-hero">
-        <div class="hero-logo">
+    <n-flex vertical align="center" justify="center" :size="20" class="search-view">
+      <n-flex vertical align="center" :size="8">
+        <n-flex align="center" :size="8" class="hero-logo">
           <icon-mdi-youtube class="hero-icon" />
           <span class="hero-text">GUI</span>
-        </div>
+        </n-flex>
         <n-text depth="3" style="font-size: 16px">
-          粘贴视频链接，快速下载
+          {{ $t('home.slogan') }}
         </n-text>
-      </div>
-      <div class="search-bar">
+      </n-flex>
+      <n-flex :size="8" :wrap="false" class="search-bar">
         <n-input
           v-model:value="url"
-          placeholder="请输入视频链接..."
+          :placeholder="$t('home.inputPlaceholder')"
           size="large"
           round
           clearable
@@ -147,16 +138,15 @@ const handleSearch = async () => {
               <icon-mdi-magnify />
             </n-icon>
           </template>
-          解析
+          {{ $t('home.parse') }}
         </n-button>
-      </div>
-      <!-- 快捷按钮 -->
+      </n-flex>
       <n-flex :size="8" justify="center">
         <n-button size="small" strong secondary round @click="handlePaste">
           <template #icon>
             <n-icon size="14"><icon-mdi-content-paste /></n-icon>
           </template>
-          从剪贴板粘贴
+          {{ $t('home.pasteFromClipboard') }}
         </n-button>
         <n-popover
           v-model:show="showHistory"
@@ -176,7 +166,7 @@ const handleSearch = async () => {
               <template #icon>
                 <n-icon size="14"><icon-mdi-history /></n-icon>
               </template>
-              解析历史
+              {{ $t('home.parseHistory') }}
             </n-button>
           </template>
           <div class="history-popover">
@@ -185,7 +175,7 @@ const handleSearch = async () => {
               justify="space-between"
               style="margin-bottom: 6px"
             >
-              <n-text strong style="font-size: 13px">历史解析记录</n-text>
+              <n-text strong style="font-size: 13px">{{ $t('home.historyRecords') }}</n-text>
               <n-button
                 size="tiny"
                 strong
@@ -196,7 +186,7 @@ const handleSearch = async () => {
                   showHistory = false;
                 "
               >
-                清空
+                {{ $t('common.clear') }}
               </n-button>
             </n-flex>
             <n-scrollbar style="max-height: 260px">
@@ -225,11 +215,11 @@ const handleSearch = async () => {
       <div class="tips-container">
         <Transition name="tip-fade" mode="out-in">
           <n-text :key="currentTipIndex" depth="3" class="tip-item">
-            {{ tips[currentTipIndex] }}
+            {{ $t(`home.tips[${currentTipIndex}]`) }}
           </n-text>
         </Transition>
       </div>
-    </div>
+    </n-flex>
   </div>
 </template>
 
@@ -240,41 +230,24 @@ const handleSearch = async () => {
 }
 
 .search-view {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
   height: 100%;
   min-height: 300px;
-  gap: 20px;
 
-  .search-hero {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
+  .hero-logo {
+    user-select: none;
 
-    .hero-logo {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      user-select: none;
+    .hero-icon {
+      font-size: 48px;
+    }
 
-      .hero-icon {
-        font-size: 48px;
-      }
-
-      .hero-text {
-        font-weight: 800;
-        font-size: 28px;
-        letter-spacing: 1px;
-      }
+    .hero-text {
+      font-weight: 800;
+      font-size: 28px;
+      letter-spacing: 1px;
     }
   }
 
   .search-bar {
-    display: flex;
-    gap: 8px;
     width: 100%;
     max-width: 500px;
   }

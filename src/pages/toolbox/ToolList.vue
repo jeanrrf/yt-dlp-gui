@@ -3,7 +3,9 @@ import type { Component } from "vue";
 import IconMdiImageOutline from "~icons/mdi/image-outline";
 import IconMdiSubtitlesOutline from "~icons/mdi/subtitles-outline";
 import IconMdiMessageTextOutline from "~icons/mdi/message-text-outline";
+import { useI18n } from "vue-i18n";
 
+useI18n();
 const router = useRouter();
 
 interface ToolItem {
@@ -11,9 +13,9 @@ interface ToolItem {
   icon: Component;
   color: string;
   bg: string;
-  title: string;
-  desc: string;
-  tag?: string;
+  titleKey: string;
+  descKey: string;
+  tagKey?: string;
 }
 
 const tools: ToolItem[] = [
@@ -22,25 +24,25 @@ const tools: ToolItem[] = [
     icon: IconMdiImageOutline,
     color: "#18a058",
     bg: "rgba(24,160,88,0.1)",
-    title: "下载视频封面",
-    desc: "提取视频封面图并保存为 JPG 格式",
+    titleKey: "toolbox.thumbnailTitle",
+    descKey: "toolbox.thumbnailDesc",
   },
   {
     key: "subtitles",
     icon: IconMdiSubtitlesOutline,
     color: "#2080f0",
     bg: "rgba(32,128,240,0.1)",
-    title: "下载视频字幕",
-    desc: "下载视频的字幕文件（支持多语言）",
+    titleKey: "toolbox.subtitlesTitle",
+    descKey: "toolbox.subtitlesDesc",
   },
   {
     key: "livechat",
     icon: IconMdiMessageTextOutline,
     color: "#f0a020",
     bg: "rgba(240,160,32,0.1)",
-    title: "获取直播弹幕",
-    desc: "获取直播回放的聊天记录 / 弹幕数据",
-    tag: "仅 YouTube",
+    titleKey: "toolbox.livechatTitle",
+    descKey: "toolbox.livechatDesc",
+    tagKey: "toolbox.youtubeOnly",
   },
 ];
 
@@ -65,17 +67,17 @@ const navigateTo = (key: string) => {
             <component :is="tool.icon" />
           </n-icon>
         </div>
-        <div class="tool-info">
+        <n-flex vertical :size="2" class="tool-info">
           <n-flex align="center" :size="6">
-            <n-text strong>{{ tool.title }}</n-text>
-            <n-tag v-if="tool.tag" size="small" round :bordered="false" type="warning">
-              {{ tool.tag }}
+            <n-text strong>{{ $t(tool.titleKey) }}</n-text>
+            <n-tag v-if="tool.tagKey" size="small" round :bordered="false" type="warning">
+              {{ $t(tool.tagKey) }}
             </n-tag>
           </n-flex>
-          <n-text depth="3" class="tool-desc">{{ tool.desc }}</n-text>
-        </div>
+          <n-text depth="3" class="tool-desc">{{ $t(tool.descKey) }}</n-text>
+        </n-flex>
         <n-button type="primary" secondary size="small" @click.stop="navigateTo(tool.key)">
-          使用
+          {{ $t('toolbox.use') }}
           <template #icon>
             <n-icon><icon-mdi-chevron-right /></n-icon>
           </template>
@@ -103,9 +105,6 @@ const navigateTo = (key: string) => {
 
 .tool-info {
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
   min-width: 0;
 
   .tool-desc {

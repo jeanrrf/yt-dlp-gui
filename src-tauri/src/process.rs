@@ -43,7 +43,7 @@ pub fn suspend_process(pid: u32) -> Result<(), String> {
         use win32::*;
         let snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
         if snapshot == -1 {
-            return Err("创建线程快照失败".into());
+            return Err("err_create_thread_snapshot".into());
         }
         let mut entry = std::mem::zeroed::<THREADENTRY32>();
         entry.dw_size = std::mem::size_of::<THREADENTRY32>() as u32;
@@ -71,7 +71,7 @@ pub fn suspend_process(pid: u32) -> Result<(), String> {
     std::process::Command::new("kill")
         .args(["-STOP", &pid.to_string()])
         .output()
-        .map_err(|e| format!("挂起进程失败: {}", e))?;
+        .map_err(|e| format!("err_suspend_process:{}", e))?;
     Ok(())
 }
 
@@ -82,7 +82,7 @@ pub fn resume_process(pid: u32) -> Result<(), String> {
         use win32::*;
         let snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
         if snapshot == -1 {
-            return Err("创建线程快照失败".into());
+            return Err("err_create_thread_snapshot".into());
         }
         let mut entry = std::mem::zeroed::<THREADENTRY32>();
         entry.dw_size = std::mem::size_of::<THREADENTRY32>() as u32;
@@ -110,7 +110,7 @@ pub fn resume_process(pid: u32) -> Result<(), String> {
     std::process::Command::new("kill")
         .args(["-CONT", &pid.to_string()])
         .output()
-        .map_err(|e| format!("恢复进程失败: {}", e))?;
+        .map_err(|e| format!("err_resume_process:{}", e))?;
     Ok(())
 }
 
@@ -122,7 +122,7 @@ pub fn kill_process(pid: u32) -> Result<(), String> {
         .args(["/F", "/T", "/PID", &pid.to_string()])
         .creation_flags(CREATE_NO_WINDOW)
         .output()
-        .map_err(|e| format!("终止进程失败: {}", e))?;
+        .map_err(|e| format!("err_kill_process:{}", e))?;
     Ok(())
 }
 
@@ -131,6 +131,6 @@ pub fn kill_process(pid: u32) -> Result<(), String> {
     std::process::Command::new("kill")
         .args(["-9", &pid.to_string()])
         .output()
-        .map_err(|e| format!("终止进程失败: {}", e))?;
+        .map_err(|e| format!("err_kill_process:{}", e))?;
     Ok(())
 }

@@ -3,10 +3,12 @@ import type { YtdlpStatus, DenoStatus, DownloadProgress } from "@/types";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { useSettingStore } from "@/stores/setting";
+import { useI18n } from "vue-i18n";
+import { localeEntries } from "@/locales";
 
+const { t } = useI18n();
 const settingStore = useSettingStore();
 
-// 平台
 const platform = ref("");
 const platformLabel = computed(() => {
   const map: Record<string, string> = {
@@ -17,40 +19,37 @@ const platformLabel = computed(() => {
   return map[platform.value] || platform.value;
 });
 
-// 主题选项
-const themeModeOptions = [
-  { label: "跟随系统", value: "auto" },
-  { label: "亮色", value: "light" },
-  { label: "暗色", value: "dark" },
-];
+const localeOptions = localeEntries.map((e) => ({ label: `${e.flag} ${e.label}`, value: e.code }));
 
-// 并发分片选项
-const concurrentFragmentsOptions = [
-  { label: "不启用", value: 0 },
+const themeModeOptions = computed(() => [
+  { label: t("settings.themeAuto"), value: "auto" },
+  { label: t("settings.themeLight"), value: "light" },
+  { label: t("settings.themeDark"), value: "dark" },
+]);
+
+const concurrentFragmentsOptions = computed(() => [
+  { label: t("settings.disabled"), value: 0 },
   { label: "2", value: 2 },
   { label: "4", value: 4 },
   { label: "8", value: 8 },
   { label: "16", value: 16 },
-];
+]);
 
-// 最大同时下载数选项
-const maxConcurrentOptions = [
-  { label: "不限制", value: 0 },
+const maxConcurrentOptions = computed(() => [
+  { label: t("settings.unlimited"), value: 0 },
   { label: "1", value: 1 },
   { label: "2", value: 2 },
   { label: "3", value: 3 },
   { label: "5", value: 5 },
-];
+]);
 
-// 通知模式选项
-const notifyModeOptions = [
-  { label: "不通知", value: "none" },
-  { label: "应用内", value: "app" },
-  { label: "系统通知", value: "system" },
-  { label: "全部", value: "all" },
-];
+const notifyModeOptions = computed(() => [
+  { label: t("settings.noNotification"), value: "none" },
+  { label: t("settings.inApp"), value: "app" },
+  { label: t("settings.systemNotification"), value: "system" },
+  { label: t("settings.all"), value: "all" },
+]);
 
-// ========== yt-dlp ==========
 const ytdlpStatus = ref<YtdlpStatus | null>(null);
 const ytdlpChecking = ref(true);
 const ytdlpDownloading = ref(false);
@@ -63,7 +62,7 @@ const checkYtdlpStatus = async () => {
   try {
     ytdlpStatus.value = await invoke<YtdlpStatus>("get_ytdlp_status");
   } catch (e) {
-    console.error("Failed to check yt-dlp status:", e);
+    // ignore
   } finally {
     ytdlpChecking.value = false;
   }
@@ -81,10 +80,10 @@ const handleDownloadYtdlp = async () => {
   );
   try {
     await invoke("download_ytdlp");
-    window.$message.success("yt-dlp 下载完成");
+    window.$message.success(t("settings.ytdlpDownloadComplete"));
     await checkYtdlpStatus();
   } catch (e: unknown) {
-    window.$message.error(`下载失败: ${e}`);
+    window.$message.error(t("common.downloadFailed", { e }));
   } finally {
     unlisten();
     ytdlpDownloading.value = false;
@@ -97,21 +96,20 @@ const handleUpdateYtdlp = async () => {
   try {
     const result = await invoke<string>("update_ytdlp");
     if (result.includes("up to date")) {
-      window.$message.success("已是最新版本");
+      window.$message.success(t("settings.alreadyLatest"));
     } else if (result.includes("Updated")) {
-      window.$message.success("已更新到最新版本");
+      window.$message.success(t("settings.updatedToLatest"));
       await checkYtdlpStatus();
     } else {
-      window.$message.success("已是最新版本");
+      window.$message.success(t("settings.alreadyLatest"));
     }
   } catch (e: unknown) {
-    window.$message.error(`更新失败: ${e}`);
+    window.$message.error(t("settings.updateFailed", { e }));
   } finally {
     ytdlpUpdating.value = false;
   }
 };
 
-// ========== Deno ==========
 const denoStatus = ref<DenoStatus | null>(null);
 const denoChecking = ref(true);
 const denoDownloading = ref(false);
@@ -123,7 +121,7 @@ const checkDenoStatus = async () => {
   try {
     denoStatus.value = await invoke<DenoStatus>("get_deno_status");
   } catch (e) {
-    console.error("Failed to check Deno status:", e);
+    // ignore
   } finally {
     denoChecking.value = false;
   }
@@ -141,10 +139,10 @@ const handleDownloadDeno = async () => {
   );
   try {
     await invoke("download_deno");
-    window.$message.success("Deno 下载完成");
+    window.$message.success(t("settings.denoDownloadComplete"));
     await checkDenoStatus();
   } catch (e: unknown) {
-    window.$message.error(`下载失败: ${e}`);
+    window.$message.error(t("common.downloadFailed", { e }));
   } finally {
     unlisten();
     denoDownloading.value = false;
@@ -165,19 +163,18 @@ onMounted(async () => {
 
 <template>
   <div class="settings-page">
-    <div class="page-header">
-      <n-h2 style="margin: 0">设置</n-h2>
+    <n-flex align="center" justify="space-between" style="margin-bottom: 20px">
+      <n-h2 style="margin: 0">{{ $t('settings.title') }}</n-h2>
       <n-button size="small" strong secondary @click="refreshAll">
         <template #icon>
           <n-icon>
             <icon-mdi-refresh />
           </n-icon>
         </template>
-        刷新
+        {{ $t('common.refresh') }}
       </n-button>
-    </div>
+    </n-flex>
 
-    <!-- yt-dlp -->
     <n-card title="yt-dlp" size="small" class="section-card">
       <template #header-extra>
         <n-flex align="center" :size="8">
@@ -186,7 +183,7 @@ onMounted(async () => {
             :type="ytdlpStatus?.installed ? 'success' : 'error'"
             round
           >
-            {{ ytdlpStatus?.installed ? "已安装" : "未安装" }}
+            {{ ytdlpStatus?.installed ? $t('settings.installed') : $t('settings.notInstalled') }}
           </n-tag>
           <n-button
             v-if="ytdlpStatus?.installed"
@@ -197,7 +194,7 @@ onMounted(async () => {
             size="small"
             @click="handleUpdateYtdlp"
           >
-            检查更新
+            {{ $t('settings.checkUpdate') }}
           </n-button>
           <n-button
             v-if="ytdlpStatus && !ytdlpStatus.installed"
@@ -210,7 +207,7 @@ onMounted(async () => {
             round
             @click="handleDownloadYtdlp"
           >
-            下载
+            {{ $t('common.download') }}
           </n-button>
         </n-flex>
       </template>
@@ -218,16 +215,16 @@ onMounted(async () => {
       <n-spin :show="ytdlpChecking">
         <n-flex vertical :size="12">
           <n-text depth="3" style="font-size: 13px">
-            本软件所需核心工具
+            {{ $t('settings.ytdlpDesc') }}
           </n-text>
 
           <div class="info-list">
             <div class="info-row">
-              <span class="info-label">版本</span>
+              <span class="info-label">{{ $t('settings.version') }}</span>
               <n-text code>{{ ytdlpStatus?.version || "—" }}</n-text>
             </div>
             <div class="info-row">
-              <span class="info-label">路径</span>
+              <span class="info-label">{{ $t('settings.path') }}</span>
               <n-ellipsis :line-clamp="1" :tooltip="{ width: 360 }">
                 {{ ytdlpStatus?.path || "—" }}
               </n-ellipsis>
@@ -249,8 +246,7 @@ onMounted(async () => {
       </n-spin>
     </n-card>
 
-    <!-- Deno -->
-    <n-card title="Deno JS 运行时" size="small" class="section-card">
+    <n-card :title="$t('settings.denoTitle')" size="small" class="section-card">
       <template #header-extra>
         <n-flex align="center" :size="8">
           <n-tag
@@ -258,7 +254,7 @@ onMounted(async () => {
             :type="denoStatus?.installed ? 'success' : 'error'"
             round
           >
-            {{ denoStatus?.installed ? "已安装" : "未安装" }}
+            {{ denoStatus?.installed ? $t('settings.installed') : $t('settings.notInstalled') }}
           </n-tag>
           <n-button
             v-if="denoStatus && !denoStatus.installed"
@@ -271,7 +267,7 @@ onMounted(async () => {
             round
             @click="handleDownloadDeno"
           >
-            下载
+            {{ $t('common.download') }}
           </n-button>
         </n-flex>
       </template>
@@ -279,17 +275,16 @@ onMounted(async () => {
       <n-spin :show="denoChecking">
         <n-flex vertical :size="12">
           <n-text depth="3" style="font-size: 13px">
-            YouTube 需要 JavaScript
-            运行时来解析视频信息。未安装时部分格式可能缺失或者无法下载
+            {{ $t('settings.denoDesc') }}
           </n-text>
 
           <div class="info-list">
             <div class="info-row">
-              <span class="info-label">版本</span>
+              <span class="info-label">{{ $t('settings.version') }}</span>
               <n-text code>{{ denoStatus?.version || "—" }}</n-text>
             </div>
             <div class="info-row">
-              <span class="info-label">路径</span>
+              <span class="info-label">{{ $t('settings.path') }}</span>
               <n-ellipsis :line-clamp="1" :tooltip="{ width: 360 }">
                 {{ denoStatus?.path || "—" }}
               </n-ellipsis>
@@ -311,11 +306,19 @@ onMounted(async () => {
       </n-spin>
     </n-card>
 
-    <!-- 外观 -->
-    <n-card title="外观" size="small" class="section-card">
+    <n-card :title="$t('settings.appearance')" size="small" class="section-card">
       <div class="info-list">
         <div class="info-row">
-          <span class="info-label">主题模式</span>
+          <span class="info-label">{{ $t('settings.language') }}</span>
+          <n-select
+            v-model:value="settingStore.locale"
+            :options="localeOptions"
+            style="width: 120px"
+            size="small"
+          />
+        </div>
+        <div class="info-row">
+          <span class="info-label">{{ $t('settings.themeMode') }}</span>
           <n-select
             v-model:value="settingStore.themeMode"
             :options="themeModeOptions"
@@ -326,21 +329,18 @@ onMounted(async () => {
       </div>
     </n-card>
 
-    <!-- Cookie -->
     <CookieCard class="section-card" />
 
-    <!-- 下载目录 -->
     <DownloadDirCard class="section-card" />
 
-    <!-- 下载选项 -->
-    <n-card title="下载选项" size="small" class="section-card">
+    <n-card :title="$t('settings.downloadOptions')" size="small" class="section-card">
       <n-flex vertical :size="12">
         <div class="info-list">
           <div class="info-row">
-            <span class="info-label">代理</span>
+            <span class="info-label">{{ $t('settings.proxy') }}</span>
             <n-input
               v-model:value="settingStore.proxy"
-              placeholder="如 http://127.0.0.1:7890"
+              :placeholder="$t('settings.proxyPlaceholder')"
               size="small"
               clearable
               style="width: 220px"
@@ -349,7 +349,7 @@ onMounted(async () => {
         </div>
         <div class="info-list">
           <div class="info-row">
-            <span class="info-label">并发分片数</span>
+            <span class="info-label">{{ $t('settings.concurrentFragments') }}</span>
             <n-select
               v-model:value="settingStore.concurrentFragments"
               :options="concurrentFragmentsOptions"
@@ -360,7 +360,7 @@ onMounted(async () => {
         </div>
         <div class="info-list">
           <div class="info-row">
-            <span class="info-label">最大同时下载数</span>
+            <span class="info-label">{{ $t('settings.maxConcurrentDownloads') }}</span>
             <n-select
               v-model:value="settingStore.maxConcurrentDownloads"
               :options="maxConcurrentOptions"
@@ -371,7 +371,7 @@ onMounted(async () => {
         </div>
         <div class="info-list">
           <div class="info-row">
-            <span class="info-label">下载完成通知</span>
+            <span class="info-label">{{ $t('settings.downloadNotification') }}</span>
             <n-select
               v-model:value="settingStore.notifyMode"
               :options="notifyModeOptions"
@@ -381,32 +381,31 @@ onMounted(async () => {
           </div>
         </div>
         <n-checkbox v-model:checked="settingStore.noOverwrites" size="small">
-          文件已存在时不覆盖
+          {{ $t('settings.noOverwrites') }}
         </n-checkbox>
       </n-flex>
     </n-card>
 
-    <!-- 关于 -->
-    <n-card title="关于" size="small" class="section-card">
+    <n-card :title="$t('settings.about')" size="small" class="section-card">
       <n-flex vertical :size="8">
         <n-text depth="3" style="font-size: 13px">
-          基于 Tauri 2 + Vue 3 + Naive UI 构建的 yt-dlp 图形界面工具
+          {{ $t('settings.aboutDesc') }}
         </n-text>
         <div class="info-list">
           <div class="info-row">
-            <span class="info-label">版本</span>
+            <span class="info-label">{{ $t('settings.version') }}</span>
             <n-text code>v0.1.0</n-text>
           </div>
           <div class="info-row">
-            <span class="info-label">平台</span>
+            <span class="info-label">{{ $t('settings.platform') }}</span>
             <n-text code>{{ platformLabel }}</n-text>
           </div>
           <div class="info-row">
-            <span class="info-label">开源协议</span>
+            <span class="info-label">{{ $t('settings.license') }}</span>
             <n-text code>MIT</n-text>
           </div>
           <div class="info-row">
-            <span class="info-label">仓库</span>
+            <span class="info-label">{{ $t('settings.repository') }}</span>
             <n-button
               text
               tag="a"
@@ -428,13 +427,6 @@ onMounted(async () => {
   max-width: 100%;
 }
 
-.page-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 20px;
-}
-
 .section-card {
   margin-bottom: 12px;
 }
@@ -451,7 +443,6 @@ onMounted(async () => {
   font-size: 13px;
   min-height: 28px;
 
-  // 虚线填充 label 和 value 之间的空隙
   &::before {
     order: 1;
     content: "";
@@ -461,7 +452,6 @@ onMounted(async () => {
     min-width: 20px;
   }
 
-  // value 排到最右
   > :last-child {
     order: 2;
     flex-shrink: 0;

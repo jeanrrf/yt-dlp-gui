@@ -50,7 +50,7 @@ pub async fn get_ytdlp_status(app: AppHandle) -> Result<YtdlpStatus, String> {
     let output = cmd
         .output()
         .await
-        .map_err(|e| format!("运行 yt-dlp 失败: {}", e))?;
+        .map_err(|e| format!("err_run_ytdlp:{}", e))?;
 
     let version = String::from_utf8_lossy(&output.stdout).trim().to_string();
 
@@ -72,22 +72,22 @@ pub async fn download_ytdlp(app: AppHandle) -> Result<(), String> {
         .get(url)
         .send()
         .await
-        .map_err(|e| format!("下载失败: {}", e))?;
+        .map_err(|e| format!("err_download_failed:{}", e))?;
 
     let total_size = response.content_length().unwrap_or(0);
     let mut downloaded: u64 = 0;
 
     let mut file = tokio::fs::File::create(&ytdlp_path)
         .await
-        .map_err(|e| format!("创建文件失败: {}", e))?;
+        .map_err(|e| format!("err_create_file:{}", e))?;
 
     let mut stream = response.bytes_stream();
 
     while let Some(chunk) = stream.next().await {
-        let chunk = chunk.map_err(|e| format!("下载错误: {}", e))?;
+        let chunk = chunk.map_err(|e| format!("err_download_error:{}", e))?;
         tokio::io::AsyncWriteExt::write_all(&mut file, &chunk)
             .await
-            .map_err(|e| format!("写入错误: {}", e))?;
+            .map_err(|e| format!("err_write_error:{}", e))?;
 
         downloaded += chunk.len() as u64;
         let percent = if total_size > 0 {
@@ -111,7 +111,7 @@ pub async fn download_ytdlp(app: AppHandle) -> Result<(), String> {
     {
         use std::os::unix::fs::PermissionsExt;
         std::fs::set_permissions(&ytdlp_path, std::fs::Permissions::from_mode(0o755))
-            .map_err(|e| format!("设置权限失败: {}", e))?;
+            .map_err(|e| format!("err_set_permissions:{}", e))?;
     }
 
     Ok(())
@@ -122,7 +122,7 @@ pub async fn download_ytdlp(app: AppHandle) -> Result<(), String> {
 pub async fn update_ytdlp(app: AppHandle) -> Result<String, String> {
     let ytdlp_path = utils::get_ytdlp_path(&app)?;
     if !ytdlp_path.exists() {
-        return Err("yt-dlp 未安装".to_string());
+        return Err("err_ytdlp_not_installed".to_string());
     }
 
     let mut cmd = tokio::process::Command::new(&ytdlp_path);
@@ -136,10 +136,10 @@ pub async fn update_ytdlp(app: AppHandle) -> Result<String, String> {
 
     let mut child = cmd
         .spawn()
-        .map_err(|e| format!("启动更新失败: {}", e))?;
+        .map_err(|e| format!("err_start_update:{}", e))?;
 
-    let stdout = child.stdout.take().ok_or("获取 stdout 失败")?;
-    let stderr = child.stderr.take().ok_or("获取 stderr 失败")?;
+    let stdout = child.stdout.take().ok_or("err_capture_stdout")?;
+    let stderr = child.stderr.take().ok_or("err_capture_stderr")?;
 
     let app_clone = app.clone();
     let stdout_handle = tokio::spawn(async move {
@@ -173,12 +173,12 @@ pub async fn update_ytdlp(app: AppHandle) -> Result<String, String> {
     let status = child
         .wait()
         .await
-        .map_err(|e| format!("进程错误: {}", e))?;
+        .map_err(|e| format!("err_process:{}", e))?;
 
     if status.success() {
         Ok(format!("{}\n{}", stdout_out, stderr_out).trim().to_string())
     } else {
-        Err(format!("更新失败: {}", stderr_out.trim()))
+        Err(format!("err_update_failed:{}", stderr_out.trim()))
     }
 }
 
@@ -239,7 +239,7 @@ pub async fn download_deno(app: AppHandle) -> Result<(), String> {
         .get(url)
         .send()
         .await
-        .map_err(|e| format!("下载失败: {}", e))?;
+        .map_err(|e| format!("err_download_failed:{}", e))?;
 
     let total_size = response.content_length().unwrap_or(0);
     let mut downloaded: u64 = 0;
@@ -248,14 +248,14 @@ pub async fn download_deno(app: AppHandle) -> Result<(), String> {
     let zip_path = deno_path.with_extension("zip");
     let mut file = tokio::fs::File::create(&zip_path)
         .await
-        .map_err(|e| format!("创建临时文件失败: {}", e))?;
+        .map_err(|e| format!("err_create_file:{}", e))?;
 
     let mut stream = response.bytes_stream();
     while let Some(chunk) = stream.next().await {
-        let chunk = chunk.map_err(|e| format!("下载错误: {}", e))?;
+        let chunk = chunk.map_err(|e| format!("err_download_error:{}", e))?;
         tokio::io::AsyncWriteExt::write_all(&mut file, &chunk)
             .await
-            .map_err(|e| format!("写入错误: {}", e))?;
+            .map_err(|e| format!("err_write_error:{}", e))?;
 
         downloaded += chunk.len() as u64;
         let percent = if total_size > 0 {
@@ -276,7 +276,7 @@ pub async fn download_deno(app: AppHandle) -> Result<(), String> {
     // 确保文件写入完成
     tokio::io::AsyncWriteExt::shutdown(&mut file)
         .await
-        .map_err(|e| format!("刷新文件失败: {}", e))?;
+        .map_err(|e| format!("err_flush_file:{}", e))?;
     drop(file);
 
     // 解压 deno 可执行文件
@@ -290,34 +290,34 @@ pub async fn download_deno(app: AppHandle) -> Result<(), String> {
 
     tokio::task::spawn_blocking(move || {
         let file = std::fs::File::open(&zip_path_clone)
-            .map_err(|e| format!("打开 zip 失败: {}", e))?;
+            .map_err(|e| format!("err_open_zip:{}", e))?;
         let mut archive =
-            zip::ZipArchive::new(file).map_err(|e| format!("读取 zip 失败: {}", e))?;
+            zip::ZipArchive::new(file).map_err(|e| format!("err_read_zip:{}", e))?;
 
         for i in 0..archive.len() {
             let mut entry = archive
                 .by_index(i)
-                .map_err(|e| format!("读取 zip 条目失败: {}", e))?;
+                .map_err(|e| format!("err_read_zip_entry:{}", e))?;
             let name = entry.name().to_lowercase();
             if name == deno_bin_name || name.ends_with(&format!("/{}", deno_bin_name)) {
                 let mut outfile = std::fs::File::create(&deno_path_clone)
-                    .map_err(|e| format!("创建 deno 可执行文件失败: {}", e))?;
+                    .map_err(|e| format!("err_create_file:{}", e))?;
                 std::io::copy(&mut entry, &mut outfile)
-                    .map_err(|e| format!("解压 deno 失败: {}", e))?;
+                    .map_err(|e| format!("err_extract_deno:{}", e))?;
                 return Ok(());
             }
         }
-        Err(format!("zip 中未找到 {}", deno_bin_name))
+        Err(format!("err_not_found_in_zip:{}", deno_bin_name))
     })
     .await
-    .map_err(|e| format!("任务错误: {}", e))??;
+    .map_err(|e| format!("err_task:{}", e))??;
 
     // Unix: 设置可执行权限
     #[cfg(unix)]
     {
         use std::os::unix::fs::PermissionsExt;
         std::fs::set_permissions(&deno_path, std::fs::Permissions::from_mode(0o755))
-            .map_err(|e| format!("设置权限失败: {}", e))?;
+            .map_err(|e| format!("err_set_permissions:{}", e))?;
     }
 
     // 清理 zip 文件

@@ -3,11 +3,11 @@ import { NCheckbox, NFlex, NLog, type LogInst } from "naive-ui";
 import { revealItemInDir } from "@tauri-apps/plugin-opener";
 import { invoke } from "@tauri-apps/api/core";
 import { useDownloadStore } from "@/stores/download";
+import { useI18n } from "vue-i18n";
 import type { DownloadTask } from "@/types";
 
+const { t } = useI18n();
 const downloadStore = useDownloadStore();
-
-// ========== 分组逻辑 ==========
 
 const activeTasks = computed(() =>
   downloadStore.tasks.filter(
@@ -37,9 +37,9 @@ const formatDateLabel = (timestamp: number): string => {
   const diff = today.getTime() - target.getTime();
   const dayMs = 86400000;
 
-  if (diff === 0) return "今天";
-  if (diff === dayMs) return "昨天";
-  if (diff === dayMs * 2) return "前天";
+  if (diff === 0) return t("downloads.today");
+  if (diff === dayMs) return t("downloads.yesterday");
+  if (diff === dayMs * 2) return t("downloads.dayBeforeYesterday");
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 };
 
@@ -57,7 +57,6 @@ const groupByDate = (tasks: DownloadTask[]): DateGroup[] => {
 const activeGroups = computed(() => groupByDate(activeTasks.value));
 const finishedGroups = computed(() => groupByDate(finishedTasks.value));
 
-// ========== 日志展开 ==========
 const expandedLogs = reactive(new Set<string>());
 
 const toggleLog = (id: string) => {
@@ -69,7 +68,7 @@ const toggleLog = (id: string) => {
 };
 
 const logContent = (task: DownloadTask) => {
-  return task.logs.join("\n") || "暂无日志...";
+  return task.logs.join("\n") || t("downloads.noLogs");
 };
 
 // 日志自动滚动到底部
@@ -94,7 +93,6 @@ watch(
   },
 );
 
-// ========== 进度条状态 ==========
 type ProgressStatus = "default" | "success" | "error" | "warning";
 const progressStatus = (task: DownloadTask): ProgressStatus => {
   switch (task.status) {
@@ -110,21 +108,20 @@ const progressStatus = (task: DownloadTask): ProgressStatus => {
   }
 };
 
-// ========== 状态标签 ==========
 const statusLabel = (task: DownloadTask) => {
   switch (task.status) {
     case "queued":
-      return "排队中";
+      return t("downloads.status.queued");
     case "downloading":
-      return task.speed || "下载中...";
+      return task.speed || t("downloads.status.downloading");
     case "paused":
-      return "已暂停";
+      return t("downloads.status.paused");
     case "completed":
-      return "下载完成";
+      return t("downloads.status.completed");
     case "error":
-      return "下载失败";
+      return t("downloads.status.error");
     case "cancelled":
-      return "已取消";
+      return t("downloads.status.cancelled");
     default:
       return "";
   }
@@ -148,7 +145,6 @@ const statusType = (
   }
 };
 
-// ========== 进度文本 ==========
 const sizeProgress = (task: DownloadTask) => {
   if (!task.downloaded && !task.total) return "";
   if (task.downloaded && task.total)
@@ -157,10 +153,8 @@ const sizeProgress = (task: DownloadTask) => {
   return "";
 };
 
-// ========== 缩略图 ==========
 const coverErrors = reactive(new Set<string>());
 
-// ========== 打开文件夹 ==========
 const handleOpenFolder = async (task: DownloadTask) => {
   try {
     if (task.outputFile) {
@@ -172,10 +166,10 @@ const handleOpenFolder = async (task: DownloadTask) => {
         return;
       }
       window.$dialog.warning({
-        title: "文件不存在",
-        content: "该文件已被删除或移动，是否从列表中移除该记录？",
-        positiveText: "移除",
-        negativeText: "取消",
+        title: t("downloads.fileNotExist"),
+        content: t("downloads.fileDeletedOrMoved"),
+        positiveText: t("common.remove"),
+        negativeText: t("common.cancel"),
         onPositiveClick: () => {
           downloadStore.removeTask(task.id);
         },
@@ -185,24 +179,23 @@ const handleOpenFolder = async (task: DownloadTask) => {
     await revealItemInDir(task.params.downloadDir);
   } catch (e: unknown) {
     window.$message.error(
-      e instanceof Error ? e.message : String(e) || "打开文件夹失败",
+      e instanceof Error ? e.message : String(e) || t("downloads.openFolderFailed"),
     );
   }
 };
 
-// ========== 操作 ==========
 const handlePause = (id: string) => {
   window.$dialog.warning({
-    title: "暂停下载",
-    content: "确定要暂停当前下载吗？",
-    positiveText: "暂停",
-    negativeText: "取消",
+    title: t("downloads.pauseDownload"),
+    content: t("downloads.confirmPause"),
+    positiveText: t("common.pause"),
+    negativeText: t("common.cancel"),
     onPositiveClick: async () => {
       try {
         await downloadStore.pauseTask(id);
       } catch (e: unknown) {
         window.$message.error(
-          e instanceof Error ? e.message : String(e) || "暂停失败",
+          e instanceof Error ? e.message : String(e) || t("downloads.pauseFailed"),
         );
       }
     },
@@ -214,23 +207,23 @@ const handleResume = async (id: string) => {
     await downloadStore.resumeTask(id);
   } catch (e: unknown) {
     window.$message.error(
-      e instanceof Error ? e.message : String(e) || "继续失败",
+      e instanceof Error ? e.message : String(e) || t("downloads.resumeFailed"),
     );
   }
 };
 
 const handleCancel = (id: string) => {
   window.$dialog.error({
-    title: "取消并删除",
-    content: "确定要取消下载并删除已下载的文件吗？此操作不可恢复。",
-    positiveText: "取消并删除",
-    negativeText: "返回",
+    title: t("downloads.cancelAndDelete"),
+    content: t("downloads.confirmCancelAndDelete"),
+    positiveText: t("downloads.cancelAndDelete"),
+    negativeText: t("common.back"),
     onPositiveClick: async () => {
       try {
         await downloadStore.cancelTask(id);
       } catch (e: unknown) {
         window.$message.error(
-          e instanceof Error ? e.message : String(e) || "取消失败",
+          e instanceof Error ? e.message : String(e) || t("downloads.cancelFailed"),
         );
       }
     },
@@ -242,7 +235,7 @@ const handleRetry = async (id: string) => {
     await downloadStore.retryTask(id);
   } catch (e: unknown) {
     window.$message.error(
-      e instanceof Error ? e.message : String(e) || "重新下载失败",
+      e instanceof Error ? e.message : String(e) || t("downloads.retryFailed"),
     );
   }
 };
@@ -253,10 +246,10 @@ const handleRemove = (task: DownloadTask) => {
   deleteFileChecked.value = false;
   const hasFile = task.status === "completed" && !!task.outputFile;
   window.$dialog.warning({
-    title: "移除任务",
+    title: t("downloads.removeTask"),
     content: () =>
       h(NFlex, { vertical: true, size: 12 }, () => [
-        "确定要从列表中移除该任务吗？",
+        t("downloads.confirmRemoveTask"),
         hasFile
           ? h(
               NCheckbox,
@@ -266,12 +259,12 @@ const handleRemove = (task: DownloadTask) => {
                   deleteFileChecked.value = v;
                 },
               },
-              { default: () => "同时删除已下载的文件" },
+              { default: () => t("downloads.alsoDeleteFiles") },
             )
           : null,
       ]),
-    positiveText: "移除",
-    negativeText: "取消",
+    positiveText: t("common.remove"),
+    negativeText: t("common.cancel"),
     onPositiveClick: async () => {
       if (hasFile && deleteFileChecked.value && task.outputFile) {
         try {
@@ -287,10 +280,10 @@ const handleRemove = (task: DownloadTask) => {
 
 const handleClearFinished = () => {
   window.$dialog.warning({
-    title: "清空已完成",
-    content: "确定要清空所有已完成/失败/已取消的任务吗？",
-    positiveText: "清空",
-    negativeText: "取消",
+    title: t("downloads.clearCompleted"),
+    content: t("downloads.confirmClearCompleted"),
+    positiveText: t("common.clear"),
+    negativeText: t("common.cancel"),
     onPositiveClick: () => {
       downloadStore.clearFinished();
     },
@@ -300,11 +293,10 @@ const handleClearFinished = () => {
 
 <template>
   <n-flex vertical :size="24">
-    <!-- ====== 下载中区域 ====== -->
     <div class="section">
       <n-flex align="center" :size="8" style="margin-bottom: 12px">
         <n-icon size="16"><icon-mdi-download /></n-icon>
-        <n-text strong>下载中</n-text>
+        <n-text strong>{{ $t('downloads.downloading') }}</n-text>
         <n-tag
           v-if="activeTasks.length > 0"
           size="small"
@@ -317,7 +309,7 @@ const handleClearFinished = () => {
       </n-flex>
 
       <div v-if="activeTasks.length === 0" class="section-empty">
-        <n-empty description="暂无正在下载的任务" size="small" />
+        <n-empty :description="$t('downloads.noActiveTasks')" size="small" />
       </div>
       <template v-else>
         <div
@@ -488,11 +480,10 @@ const handleClearFinished = () => {
       </template>
     </div>
 
-    <!-- ====== 已完成区域 ====== -->
     <div class="section">
       <n-flex align="center" :size="8" style="margin-bottom: 12px">
         <n-icon size="16"><icon-mdi-check-circle-outline /></n-icon>
-        <n-text strong>已完成</n-text>
+        <n-text strong>{{ $t('downloads.completed') }}</n-text>
         <n-tag
           v-if="finishedTasks.length > 0"
           size="small"
@@ -514,12 +505,12 @@ const handleClearFinished = () => {
           <template #icon>
             <n-icon size="14"><icon-mdi-delete-sweep-outline /></n-icon>
           </template>
-          清空
+          {{ $t('common.clear') }}
         </n-button>
       </n-flex>
 
       <div v-if="finishedTasks.length === 0" class="section-empty">
-        <n-empty description="暂无已完成的任务" size="small" />
+        <n-empty :description="$t('downloads.noFinishedTasks')" size="small" />
       </div>
       <template v-else>
         <div
@@ -666,7 +657,6 @@ const handleClearFinished = () => {
   padding: 24px 0;
 }
 
-// ========== 日期分组 ==========
 .date-group {
   margin-bottom: 12px;
 }
@@ -677,7 +667,6 @@ const handleClearFinished = () => {
   margin-bottom: 8px;
 }
 
-// ========== 任务卡片 ==========
 .task-card {
   :deep(.n-card__content) {
     padding: 14px;

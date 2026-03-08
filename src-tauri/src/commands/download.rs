@@ -145,7 +145,7 @@ pub async fn start_download(
 ) -> Result<(), String> {
     let ytdlp_path = utils::get_ytdlp_path(&app)?;
     if !ytdlp_path.exists() {
-        return Err("yt-dlp 未安装，请先在设置中下载".to_string());
+        return Err("err_ytdlp_not_installed".to_string());
     }
 
     let args = build_download_args(&app, &params)?;
@@ -154,7 +154,7 @@ pub async fn start_download(
     let app_data = app
         .path()
         .app_data_dir()
-        .map_err(|e| format!("获取应用数据目录失败: {}", e))?;
+        .map_err(|e| format!("err_app_data_dir:{}", e))?;
     let filepath_file = app_data
         .join(format!("{}_filepath.txt", params.id))
         .to_string_lossy()
@@ -177,9 +177,9 @@ pub async fn start_download(
 
     let mut child = cmd
         .spawn()
-        .map_err(|e| format!("启动下载失败: {}", e))?;
+        .map_err(|e| format!("err_start_download:{}", e))?;
 
-    let pid = child.id().ok_or("获取进程 ID 失败")?;
+    let pid = child.id().ok_or("err_get_pid")?;
     let task_id = params.id.clone();
 
     // 计算裁剪片段时长（用于 ffmpeg 进度计算）
@@ -206,8 +206,8 @@ pub async fn start_download(
         );
     }
 
-    let stdout = child.stdout.take().ok_or("获取 stdout 失败")?;
-    let stderr = child.stderr.take().ok_or("获取 stderr 失败")?;
+    let stdout = child.stdout.take().ok_or("err_capture_stdout")?;
+    let stderr = child.stderr.take().ok_or("err_capture_stderr")?;
 
     // 读取 stdout（原始字节，lossy 解码以应对 Windows GBK 编码）
     spawn_output_reader(app.clone(), task_id.clone(), processes.clone(), stdout);
@@ -473,7 +473,7 @@ fn spawn_completion_handler(
         } else if !was_cancelled {
             let error_msg = status
                 .as_ref()
-                .map(|s| format!("进程退出码: {}", s.code().unwrap_or(-1)))
+                .map(|s| format!("err_exit_code:{}", s.code().unwrap_or(-1)))
                 .unwrap_or_else(|e| e.to_string());
             let _ = app.emit(
                 "download-error",
@@ -543,7 +543,7 @@ pub async fn pause_download(
     id: String,
 ) -> Result<(), String> {
     let processes = state.processes.lock().map_err(|e| e.to_string())?;
-    let info = processes.get(&id).ok_or("下载任务未找到")?;
+    let info = processes.get(&id).ok_or("err_task_not_found")?;
     process::suspend_process(info.pid)
 }
 
@@ -554,7 +554,7 @@ pub async fn resume_download(
     id: String,
 ) -> Result<(), String> {
     let processes = state.processes.lock().map_err(|e| e.to_string())?;
-    let info = processes.get(&id).ok_or("下载任务未找到")?;
+    let info = processes.get(&id).ok_or("err_task_not_found")?;
     process::resume_process(info.pid)
 }
 
@@ -567,7 +567,7 @@ pub async fn cancel_download(
 ) -> Result<(), String> {
     let (pid, files) = {
         let mut processes = state.processes.lock().map_err(|e| e.to_string())?;
-        let info = processes.get_mut(&id).ok_or("下载任务未找到")?;
+        let info = processes.get_mut(&id).ok_or("err_task_not_found")?;
         info.cancelled = true;
         (info.pid, info.output_files.clone())
     };
@@ -600,7 +600,7 @@ pub fn check_files_exist(paths: Vec<String>) -> Vec<bool> {
 pub fn delete_file(path: String) -> Result<(), String> {
     let p = std::path::Path::new(&path);
     if p.exists() {
-        std::fs::remove_file(p).map_err(|e| format!("删除文件失败: {}", e))?;
+        std::fs::remove_file(p).map_err(|e| format!("err_delete_file:{}", e))?;
     }
     Ok(())
 }

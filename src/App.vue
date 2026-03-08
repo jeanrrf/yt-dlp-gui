@@ -5,9 +5,16 @@ import IconMdiHome from "~icons/mdi/home";
 import IconMdiDownload from "~icons/mdi/download";
 import IconMdiToolbox from "~icons/mdi/toolbox";
 import type { Component } from "vue";
+import { useI18n } from "vue-i18n";
+import { useSettingStore } from "@/stores/setting";
+import { localeEntries } from "@/locales";
 
+useI18n();
 const router = useRouter();
 const route = useRoute();
+const settingStore = useSettingStore();
+
+const localeOptions = localeEntries.map((e) => ({ label: `${e.flag} ${e.label}`, value: e.code }));
 
 const currentRoute = computed(() => {
   const name = (route.name as string) ?? "";
@@ -16,10 +23,10 @@ const currentRoute = computed(() => {
   return name;
 });
 
-const navItems: { key: string; icon: Component; label: string }[] = [
-  { key: "home", icon: IconMdiHome, label: "首页" },
-  { key: "downloads", icon: IconMdiDownload, label: "下载" },
-  { key: "toolbox", icon: IconMdiToolbox, label: "工具" },
+const navItems: { key: string; icon: Component; labelKey: string }[] = [
+  { key: "home", icon: IconMdiHome, labelKey: "nav.home" },
+  { key: "downloads", icon: IconMdiDownload, labelKey: "nav.downloads" },
+  { key: "toolbox", icon: IconMdiToolbox, labelKey: "nav.toolbox" },
 ];
 
 onMounted(() => {
@@ -32,14 +39,12 @@ onMounted(() => {
     <CookieModal />
     <n-layout style="height: 100vh">
       <n-layout-header bordered class="app-header">
-        <!-- 左侧 Logo -->
         <div class="header-side">
           <div class="logo" @click="router.push({ name: 'home' })">
             <icon-mdi-youtube />
             <span class="logo-text">GUI</span>
           </div>
         </div>
-        <!-- 中间导航 -->
         <div class="header-nav">
           <n-button
             v-for="item in navItems"
@@ -57,11 +62,10 @@ onMounted(() => {
               </n-icon>
             </template>
             <span class="nav-label" :class="{ expanded: currentRoute === item.key }">
-              {{ item.label }}
+              {{ $t(item.labelKey) }}
             </span>
           </n-button>
         </div>
-        <!-- 右侧按钮 -->
         <div class="header-side header-side-right">
           <n-button
             :focusable="false"
@@ -77,6 +81,19 @@ onMounted(() => {
               </n-icon>
             </template>
           </n-button>
+          <n-popselect
+            v-model:value="settingStore.locale"
+            :options="localeOptions"
+            trigger="click"
+          >
+            <n-button :focusable="false" quaternary circle>
+              <template #icon>
+                <n-icon>
+                  <icon-mdi-translate />
+                </n-icon>
+              </template>
+            </n-button>
+          </n-popselect>
           <n-button
             :type="currentRoute === 'settings' ? 'primary' : 'default'"
             :secondary="currentRoute === 'settings'"
@@ -216,7 +233,7 @@ onMounted(() => {
       margin-left: 0;
 
       &.expanded {
-        max-width: 40px;
+        max-width: 80px;
         opacity: 1;
         margin-left: 4px;
       }

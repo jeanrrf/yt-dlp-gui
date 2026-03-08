@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { formatFileSize } from "@/utils/format";
+import { useI18n } from "vue-i18n";
 import type { VideoFormat } from "@/types";
+
+const { t } = useI18n();
 
 const props = defineProps<{
   videoFormats: VideoFormat[];
@@ -20,7 +23,7 @@ const selectedAudioFormat = defineModel<string>("selectedAudioFormat", {
 /** 视频格式下拉选项 */
 const videoFormatOptions = computed(() =>
   props.videoFormats.map((f) => ({
-    label: `${f.height}p${f.fps ? ` ${f.fps}fps` : ""} · ${f.ext} · ${f.filesize || f.filesize_approx ? formatFileSize(f.filesize || f.filesize_approx || 0) : "未知大小"}`,
+    label: `${f.height}p${f.fps ? ` ${f.fps}fps` : ""} · ${f.ext} · ${f.filesize || f.filesize_approx ? formatFileSize(f.filesize || f.filesize_approx || 0) : t("detail.unknownSize")}`,
     value: f.format_id,
   })),
 );
@@ -28,19 +31,19 @@ const videoFormatOptions = computed(() =>
 /** 音频格式下拉选项 */
 const audioFormatOptions = computed(() =>
   props.audioFormats.map((f) => ({
-    label: `${f.abr ? f.abr + "kbps" : f.format_note} · ${f.ext} · ${f.filesize || f.filesize_approx ? formatFileSize(f.filesize || f.filesize_approx || 0) : "未知大小"}`,
+    label: `${f.abr ? f.abr + "kbps" : f.format_note} · ${f.ext} · ${f.filesize || f.filesize_approx ? formatFileSize(f.filesize || f.filesize_approx || 0) : t("detail.unknownSize")}`,
     value: f.format_id,
   })),
 );
 </script>
 
 <template>
-  <n-card title="下载方式" size="small">
+  <n-card :title="$t('detail.downloadMethod')" size="small">
     <n-flex vertical :size="12">
       <n-radio-group v-model:value="downloadMode" size="small">
-        <n-radio-button value="default">默认</n-radio-button>
-        <n-radio-button value="video">仅视频</n-radio-button>
-        <n-radio-button value="audio">仅音频</n-radio-button>
+        <n-radio-button value="default">{{ $t('common.default') }}</n-radio-button>
+        <n-radio-button value="video">{{ $t('detail.videoOnly') }}</n-radio-button>
+        <n-radio-button value="audio">{{ $t('detail.audioOnly') }}</n-radio-button>
       </n-radio-group>
 
       <n-flex
@@ -49,7 +52,7 @@ const audioFormatOptions = computed(() =>
         :size="8"
       >
         <n-text depth="3" style="font-size: 13px; flex-shrink: 0">
-          视频
+          {{ $t('detail.video') }}
         </n-text>
         <n-select
           v-model:value="selectedVideoFormat"
@@ -64,7 +67,7 @@ const audioFormatOptions = computed(() =>
         :size="8"
       >
         <n-text depth="3" style="font-size: 13px; flex-shrink: 0">
-          音频
+          {{ $t('detail.audio') }}
         </n-text>
         <n-select
           v-model:value="selectedAudioFormat"

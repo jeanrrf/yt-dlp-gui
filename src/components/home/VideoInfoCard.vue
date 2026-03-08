@@ -1,5 +1,8 @@
 <script setup lang="ts">
+import { useI18n } from "vue-i18n";
 import type { VideoInfo } from "@/types";
+
+const { t } = useI18n();
 
 const props = defineProps<{
   videoInfo: VideoInfo;
@@ -18,11 +21,11 @@ const formatDuration = (seconds: number): string => {
   return `${m}:${String(s).padStart(2, "0")}`;
 };
 
-/** 格式化播放次数，超过万/亿使用中文单位 */
+/** 格式化播放次数 */
 const formatViewCount = (count: number): string => {
   if (!count) return "";
-  if (count >= 100000000) return `${(count / 100000000).toFixed(1)}亿`;
-  if (count >= 10000) return `${(count / 10000).toFixed(1)}万`;
+  if (count >= 100000000) return `${(count / 100000000).toFixed(1)}${t("detail.viewYi")}`;
+  if (count >= 10000) return `${(count / 10000).toFixed(1)}${t("detail.viewWan")}`;
   return String(count);
 };
 
@@ -40,7 +43,7 @@ watch(
 
 <template>
   <n-card size="small">
-    <div class="video-info">
+    <n-flex :size="16" :wrap="false">
       <div class="video-cover">
         <n-skeleton
           v-if="!coverLoaded && !coverError"
@@ -68,7 +71,7 @@ watch(
             <template #icon>
               <n-icon size="12"><icon-mdi-playlist-play /></n-icon>
             </template>
-            合集 {{ playlistCount }}P
+            {{ $t('detail.playlistTag', { n: playlistCount }) }}
           </n-tag>
         </n-flex>
         <n-ellipsis :line-clamp="2" :tooltip="false" class="video-title">
@@ -79,7 +82,7 @@ watch(
             <icon-mdi-account
               style="vertical-align: -2px; margin-right: 2px"
             />
-            {{ videoInfo.uploader || "未知" }}
+            {{ videoInfo.uploader || $t('common.unknown') }}
           </n-text>
           <n-text
             v-if="videoInfo.view_count"
@@ -89,20 +92,15 @@ watch(
             <icon-mdi-eye
               style="vertical-align: -2px; margin-right: 2px"
             />
-            {{ formatViewCount(videoInfo.view_count) }}次播放
+            {{ formatViewCount(videoInfo.view_count) }}{{ $t('detail.views') }}
           </n-text>
         </n-flex>
       </div>
-    </div>
+    </n-flex>
   </n-card>
 </template>
 
 <style scoped lang="scss">
-.video-info {
-  display: flex;
-  gap: 16px;
-}
-
 .video-cover {
   position: relative;
   flex-shrink: 0;

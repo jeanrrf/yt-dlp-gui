@@ -17,7 +17,7 @@ async fn run_ytdlp_tool(
 ) -> Result<String, String> {
     let ytdlp_path = utils::get_ytdlp_path(app)?;
     if !ytdlp_path.exists() {
-        return Err("yt-dlp 未安装，请先在设置中下载".to_string());
+        return Err("err_ytdlp_not_installed".to_string());
     }
 
     let mut args = vec![
@@ -63,7 +63,7 @@ async fn run_ytdlp_tool(
     let output = cmd
         .output()
         .await
-        .map_err(|e| format!("运行 yt-dlp 失败: {}", e))?;
+        .map_err(|e| format!("err_run_ytdlp:{}", e))?;
 
     let stdout = String::from_utf8_lossy(&output.stdout);
     let stderr = String::from_utf8_lossy(&output.stderr);
@@ -91,7 +91,7 @@ pub async fn tool_fetch_thumbnails(
 ) -> Result<Value, String> {
     let ytdlp_path = utils::get_ytdlp_path(&app)?;
     if !ytdlp_path.exists() {
-        return Err("yt-dlp 未安装，请先在设置中下载".to_string());
+        return Err("err_ytdlp_not_installed".to_string());
     }
 
     let mut args = vec![
@@ -129,7 +129,7 @@ pub async fn tool_fetch_thumbnails(
     let output = cmd
         .output()
         .await
-        .map_err(|e| format!("运行 yt-dlp 失败: {}", e))?;
+        .map_err(|e| format!("err_run_ytdlp:{}", e))?;
 
     let stdout = String::from_utf8_lossy(&output.stdout);
 
@@ -137,7 +137,7 @@ pub async fn tool_fetch_thumbnails(
         .lines()
         .find(|line| line.trim_start().starts_with('{'))
     {
-        return serde_json::from_str(json_str).map_err(|e| format!("解析视频信息失败: {}", e));
+        return serde_json::from_str(json_str).map_err(|e| format!("err_parse_video_info:{}", e));
     }
 
     let stderr = String::from_utf8_lossy(&output.stderr);
@@ -161,39 +161,39 @@ pub async fn tool_save_thumbnail(
     if let Some(ref p) = proxy {
         if !p.is_empty() {
             let reqwest_proxy =
-                reqwest::Proxy::all(p).map_err(|e| format!("代理配置错误: {}", e))?;
+                reqwest::Proxy::all(p).map_err(|e| format!("err_proxy_config:{}", e))?;
             builder = builder.proxy(reqwest_proxy);
         }
     }
     let client = builder
         .build()
-        .map_err(|e| format!("创建 HTTP 客户端失败: {}", e))?;
+        .map_err(|e| format!("err_create_http_client:{}", e))?;
 
     let response = client
         .get(&url)
         .send()
         .await
-        .map_err(|e| format!("下载封面失败: {}", e))?;
+        .map_err(|e| format!("err_download_thumbnail:{}", e))?;
 
     if !response.status().is_success() {
-        return Err(format!("下载封面失败: HTTP {}", response.status()));
+        return Err(format!("err_download_thumbnail:HTTP {}", response.status()));
     }
 
     let bytes = response
         .bytes()
         .await
-        .map_err(|e| format!("读取封面数据失败: {}", e))?;
+        .map_err(|e| format!("err_read_thumbnail_data:{}", e))?;
 
     // 确保父目录存在
     if let Some(parent) = std::path::Path::new(&file_path).parent() {
         tokio::fs::create_dir_all(parent)
             .await
-            .map_err(|e| format!("创建目录失败: {}", e))?;
+            .map_err(|e| format!("err_create_dir:{}", e))?;
     }
 
     tokio::fs::write(&file_path, &bytes)
         .await
-        .map_err(|e| format!("保存封面文件失败: {}", e))?;
+        .map_err(|e| format!("err_save_file:{}", e))?;
 
     Ok(())
 }
@@ -232,7 +232,7 @@ pub async fn tool_fetch_subtitles(
 ) -> Result<Value, String> {
     let ytdlp_path = utils::get_ytdlp_path(&app)?;
     if !ytdlp_path.exists() {
-        return Err("yt-dlp 未安装，请先在设置中下载".to_string());
+        return Err("err_ytdlp_not_installed".to_string());
     }
 
     let mut args = vec![
@@ -270,7 +270,7 @@ pub async fn tool_fetch_subtitles(
     let output = cmd
         .output()
         .await
-        .map_err(|e| format!("运行 yt-dlp 失败: {}", e))?;
+        .map_err(|e| format!("err_run_ytdlp:{}", e))?;
 
     let stdout = String::from_utf8_lossy(&output.stdout);
 
@@ -279,7 +279,7 @@ pub async fn tool_fetch_subtitles(
         .find(|line| line.trim_start().starts_with('{'))
     {
         let info: Value =
-            serde_json::from_str(json_str).map_err(|e| format!("解析视频信息失败: {}", e))?;
+            serde_json::from_str(json_str).map_err(|e| format!("err_parse_video_info:{}", e))?;
 
         // 只返回字幕相关字段和标题
         let result = serde_json::json!({
@@ -311,38 +311,38 @@ pub async fn tool_save_subtitle(
     if let Some(ref p) = proxy {
         if !p.is_empty() {
             let reqwest_proxy =
-                reqwest::Proxy::all(p).map_err(|e| format!("代理配置错误: {}", e))?;
+                reqwest::Proxy::all(p).map_err(|e| format!("err_proxy_config:{}", e))?;
             builder = builder.proxy(reqwest_proxy);
         }
     }
     let client = builder
         .build()
-        .map_err(|e| format!("创建 HTTP 客户端失败: {}", e))?;
+        .map_err(|e| format!("err_create_http_client:{}", e))?;
 
     let response = client
         .get(&url)
         .send()
         .await
-        .map_err(|e| format!("下载字幕失败: {}", e))?;
+        .map_err(|e| format!("err_download_subtitle:{}", e))?;
 
     if !response.status().is_success() {
-        return Err(format!("下载字幕失败: HTTP {}", response.status()));
+        return Err(format!("err_download_subtitle:HTTP {}", response.status()));
     }
 
     let text = response
         .text()
         .await
-        .map_err(|e| format!("读取字幕数据失败: {}", e))?;
+        .map_err(|e| format!("err_read_subtitle_data:{}", e))?;
 
     if let Some(parent) = std::path::Path::new(&file_path).parent() {
         tokio::fs::create_dir_all(parent)
             .await
-            .map_err(|e| format!("创建目录失败: {}", e))?;
+            .map_err(|e| format!("err_create_dir:{}", e))?;
     }
 
     tokio::fs::write(&file_path, &text)
         .await
-        .map_err(|e| format!("保存字幕文件失败: {}", e))?;
+        .map_err(|e| format!("err_save_file:{}", e))?;
 
     Ok(())
 }
@@ -354,28 +354,28 @@ pub async fn tool_download_text(url: String, proxy: Option<String>) -> Result<St
     if let Some(ref p) = proxy {
         if !p.is_empty() {
             let reqwest_proxy =
-                reqwest::Proxy::all(p).map_err(|e| format!("代理配置错误: {}", e))?;
+                reqwest::Proxy::all(p).map_err(|e| format!("err_proxy_config:{}", e))?;
             builder = builder.proxy(reqwest_proxy);
         }
     }
     let client = builder
         .build()
-        .map_err(|e| format!("创建 HTTP 客户端失败: {}", e))?;
+        .map_err(|e| format!("err_create_http_client:{}", e))?;
 
     let response = client
         .get(&url)
         .send()
         .await
-        .map_err(|e| format!("下载失败: {}", e))?;
+        .map_err(|e| format!("err_download_failed:{}", e))?;
 
     if !response.status().is_success() {
-        return Err(format!("下载失败: HTTP {}", response.status()));
+        return Err(format!("err_download_failed:HTTP {}", response.status()));
     }
 
     response
         .text()
         .await
-        .map_err(|e| format!("读取文本失败: {}", e))
+        .map_err(|e| format!("err_read_text:{}", e))
 }
 
 /// 将文本内容保存到指定文件路径
@@ -384,12 +384,12 @@ pub async fn tool_save_text_to_file(content: String, file_path: String) -> Resul
     if let Some(parent) = std::path::Path::new(&file_path).parent() {
         tokio::fs::create_dir_all(parent)
             .await
-            .map_err(|e| format!("创建目录失败: {}", e))?;
+            .map_err(|e| format!("err_create_dir:{}", e))?;
     }
 
     tokio::fs::write(&file_path, &content)
         .await
-        .map_err(|e| format!("保存文件失败: {}", e))?;
+        .map_err(|e| format!("err_save_file:{}", e))?;
 
     Ok(())
 }
@@ -540,7 +540,7 @@ pub async fn tool_fetch_live_chat(
 ) -> Result<Vec<LiveChatMessage>, String> {
     let ytdlp_path = utils::get_ytdlp_path(&app)?;
     if !ytdlp_path.exists() {
-        return Err("yt-dlp 未安装，请先在设置中下载".to_string());
+        return Err("err_ytdlp_not_installed".to_string());
     }
 
     // 创建临时目录
@@ -553,7 +553,7 @@ pub async fn tool_fetch_live_chat(
     ));
     tokio::fs::create_dir_all(&temp_dir)
         .await
-        .map_err(|e| format!("创建临时目录失败: {}", e))?;
+        .map_err(|e| format!("err_create_dir:{}", e))?;
 
     let temp_path = temp_dir.to_string_lossy().to_string();
     let output_template = format!("{}/%(title).200s.%(ext)s", temp_path);
@@ -596,7 +596,7 @@ pub async fn tool_fetch_live_chat(
         Ok(output) => output,
         Err(e) => {
             let _ = tokio::fs::remove_dir_all(&temp_dir).await;
-            return Err(format!("运行 yt-dlp 失败: {}", e));
+            return Err(format!("err_run_ytdlp:{}", e));
         }
     };
 
@@ -625,12 +625,12 @@ async fn parse_live_chat_dir(
     let mut chat_file = None;
     let mut entries = tokio::fs::read_dir(dir)
         .await
-        .map_err(|e| format!("读取临时目录失败: {}", e))?;
+        .map_err(|e| format!("err_read_dir:{}", e))?;
 
     while let Some(entry) = entries
         .next_entry()
         .await
-        .map_err(|e| format!("读取文件列表失败: {}", e))?
+        .map_err(|e| format!("err_read_file_list:{}", e))?
     {
         let name = entry.file_name().to_string_lossy().to_string();
         if name.contains("live_chat") && name.ends_with(".json") {
@@ -640,11 +640,11 @@ async fn parse_live_chat_dir(
     }
 
     let chat_file =
-        chat_file.ok_or("未找到弹幕数据文件，该视频可能没有直播弹幕".to_string())?;
+        chat_file.ok_or("err_livechat_not_found".to_string())?;
 
     let content = tokio::fs::read_to_string(&chat_file)
         .await
-        .map_err(|e| format!("读取弹幕文件失败: {}", e))?;
+        .map_err(|e| format!("err_read_livechat:{}", e))?;
 
     let mut messages: Vec<LiveChatMessage> = content
         .lines()
@@ -656,7 +656,7 @@ async fn parse_live_chat_dir(
     }
 
     if messages.is_empty() {
-        return Err("弹幕数据为空".to_string());
+        return Err("err_livechat_empty".to_string());
     }
 
     Ok(messages)

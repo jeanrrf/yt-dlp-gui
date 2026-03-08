@@ -4,6 +4,7 @@ import { formatFileSize } from "@/utils/format";
 import { useSettingStore } from "@/stores/setting";
 import { useDownloadStore } from "@/stores/download";
 import { useVideoStore } from "@/stores/video";
+import { useI18n } from "vue-i18n";
 import type { VideoInfo } from "@/types";
 import VideoInfoCard from "@/components/home/VideoInfoCard.vue";
 import DownloadOptionsCard from "@/components/home/DownloadOptionsCard.vue";
@@ -12,12 +13,12 @@ import SubtitleCard from "@/components/home/SubtitleCard.vue";
 import DownloadDirCard from "@/components/DownloadDirCard.vue";
 import DownloadBar from "@/components/home/DownloadBar.vue";
 
+const { t } = useI18n();
 const router = useRouter();
 const settingStore = useSettingStore();
 const downloadStore = useDownloadStore();
 const videoStore = useVideoStore();
 
-// 无数据时返回首页
 if (!videoStore.videoInfo) {
   router.replace({ name: "home" });
 }
@@ -37,10 +38,8 @@ const formatTime = (secs: number): string => {
   return h > 0 ? `${pad(h)}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
 };
 
-// 下载模式
 const downloadMode = ref<"default" | "video" | "audio">("default");
 
-// 格式选择
 const selectedVideoFormat = ref(
   videoStore.videoFormats.length > 0
     ? videoStore.videoFormats[0].format_id
@@ -52,7 +51,6 @@ const selectedAudioFormat = ref(
     : "",
 );
 
-// 额外选项
 const startTime = ref<number | null>(null);
 const endTime = ref<number | null>(null);
 const embedSubs = ref(false);
@@ -67,10 +65,8 @@ const recodeFormat = ref("");
 const limitRate = ref("");
 const selectedSubtitles = ref<string[]>([]);
 
-// 下载目录卡片 ref
 const dirCardRef = ref<HTMLElement | null>(null);
 
-// ========== 计算 ==========
 const estimatedSize = computed(() => {
   let total = 0;
   if (downloadMode.value !== "audio") {
@@ -89,13 +85,10 @@ const estimatedSize = computed(() => {
 });
 
 const estimatedSizeText = computed(() => {
-  if (!estimatedSize.value) return "未知";
+  if (!estimatedSize.value) return t("common.unknown");
   return formatFileSize(estimatedSize.value);
 });
 
-// ========== 方法 ==========
-
-/** 返回搜索页面 */
 const handleBack = () => {
   videoStore.clear();
   router.push({ name: "home" });
@@ -110,14 +103,14 @@ const handleRefresh = async () => {
       ? videoStore.videoFormats[0].format_id : "";
     selectedAudioFormat.value = videoStore.audioFormats.length > 0
       ? videoStore.audioFormats[0].format_id : "";
-    window.$message.success("刷新成功");
+    window.$message.success(t("detail.refreshSuccess"));
   }
 };
 
 /** 开始下载视频 */
 const handleDownload = async () => {
   if (!settingStore.downloadDir) {
-    window.$message.warning("请先设置下载目录");
+    window.$message.warning(t("detail.setDownloadDirFirst"));
     dirCardRef.value?.scrollIntoView({ behavior: "smooth", block: "center" });
     return;
   }
@@ -128,7 +121,7 @@ const handleDownload = async () => {
   const buildFormatLabel = (): string => {
     const parts: string[] = [];
     if (downloadMode.value === "audio") {
-      parts.push("仅音频");
+      parts.push(t("detail.audioOnly"));
       const af = videoStore.audioFormats.find(
         (f) => f.format_id === selectedAudioFormat.value,
       );
@@ -141,14 +134,14 @@ const handleDownload = async () => {
         if (vf.height) parts.push(`${vf.height}p`);
         if (vf.fps) parts.push(`${vf.fps}fps`);
       }
-      if (downloadMode.value === "video") parts.push("仅视频");
+      if (downloadMode.value === "video") parts.push(t("detail.videoOnly"));
     }
     if (startTime.value != null || endTime.value != null) {
       const s = startTime.value != null ? formatTime(timeToSeconds(startTime.value)) : "00:00";
-      const e = endTime.value != null ? formatTime(timeToSeconds(endTime.value)) : "结束";
+      const e = endTime.value != null ? formatTime(timeToSeconds(endTime.value)) : t("detail.end");
       parts.push(`✂${s}-${e}`);
     }
-    return parts.join(" ") || "默认画质";
+    return parts.join(" ") || t("detail.defaultQuality");
   };
 
   const dlParams = {
@@ -186,7 +179,7 @@ const handleDownload = async () => {
   downloadStore.addTask({
     id: taskId,
     url: videoStore.url,
-    title: videoStore.videoInfo?.title || "未知视频",
+    title: videoStore.videoInfo?.title || t("detail.unknownVideo"),
     thumbnail: videoStore.videoInfo?.thumbnail || "",
     formatLabel: buildFormatLabel(),
     status: shouldQueue ? "queued" : "downloading",
@@ -212,7 +205,7 @@ const handleDownload = async () => {
     router.push({ name: "downloads" });
   } catch (e: unknown) {
     window.$message.error(
-      e instanceof Error ? e.message : String(e) || "启动下载失败",
+      e instanceof Error ? e.message : String(e) || t("detail.startDownloadFailed"),
     );
     downloadStore.removeTask(taskId);
   }
@@ -221,19 +214,18 @@ const handleDownload = async () => {
 
 <template>
   <div v-if="videoStore.videoInfo" class="detail-page">
-    <!-- 顶部搜索栏（只读） -->
-    <div class="search-bar-mini">
+    <n-flex :size="8" align="center" style="margin-bottom: 16px">
       <n-button size="small" strong secondary round @click="handleBack">
         <template #icon>
           <n-icon>
             <icon-mdi-arrow-left />
           </n-icon>
         </template>
-        返回
+        {{ $t('common.back') }}
       </n-button>
       <n-input
         :value="videoStore.url"
-        placeholder="视频链接"
+        :placeholder="$t('detail.videoLink')"
         size="small"
         round
         readonly
@@ -252,7 +244,7 @@ const handleDownload = async () => {
           </n-icon>
         </template>
       </n-button>
-    </div>
+    </n-flex>
 
     <VideoInfoCard
       :video-info="videoStore.videoInfo as VideoInfo"
@@ -261,12 +253,11 @@ const handleDownload = async () => {
       class="section-card"
     />
 
-    <!-- 播放列表选择 -->
     <n-card v-if="videoStore.isPlaylist && videoStore.playlistEntries.length > 0" size="small" class="section-card">
       <template #header>
         <n-flex align="center" :size="8">
           <n-icon size="16"><icon-mdi-playlist-play /></n-icon>
-          <span>播放列表</span>
+          <span>{{ $t('detail.playlist') }}</span>
           <n-tag size="small" round :bordered="false" type="info">
             {{ videoStore.selectedPlaylistItems.length }} / {{ videoStore.playlistEntries.length }}
           </n-tag>
@@ -275,10 +266,10 @@ const handleDownload = async () => {
       <template #header-extra>
         <n-flex :size="8">
           <n-button size="tiny" secondary @click="videoStore.selectedPlaylistItems = videoStore.playlistEntries.map((_, i) => i + 1)">
-            全选
+            {{ $t('common.selectAll') }}
           </n-button>
           <n-button size="tiny" secondary @click="videoStore.selectedPlaylistItems = []">
-            取消全选
+            {{ $t('common.deselectAll') }}
           </n-button>
         </n-flex>
       </template>
@@ -329,10 +320,8 @@ const handleDownload = async () => {
       <DownloadDirCard />
     </div>
 
-    <!-- 底部占位 -->
     <div style="height: 64px" />
 
-    <!-- 底部浮动下载栏 -->
     <DownloadBar
       :estimated-size-text="estimatedSizeText"
       @download="handleDownload"
@@ -347,12 +336,5 @@ const handleDownload = async () => {
   .section-card {
     margin-bottom: 16px;
   }
-}
-
-.search-bar-mini {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  margin-bottom: 16px;
 }
 </style>

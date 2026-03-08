@@ -1,8 +1,8 @@
 <!-- 全局配置 -->
 <template>
   <n-config-provider
-    :locale="zhCN"
-    :date-locale="dateZhCN"
+    :locale="naiveLocale"
+    :date-locale="naiveDateLocale"
     :theme="theme"
     :theme-overrides="themeOverrides"
     abstract
@@ -29,6 +29,8 @@
 import {
   zhCN,
   dateZhCN,
+  enUS,
+  dateEnUS,
   darkTheme,
   useOsTheme,
   useLoadingBar,
@@ -38,10 +40,16 @@ import {
   useNotification,
   GlobalThemeOverrides,
 } from "naive-ui";
+import { useI18n } from "vue-i18n";
 import { useSettingStore } from "@/stores/setting";
 
 // 设置
 const settingStore = useSettingStore();
+const { locale } = useI18n();
+
+// Naive UI 语言：中文用中文，其他一律英文
+const naiveLocale = computed(() => (locale.value.startsWith("zh") ? zhCN : enUS));
+const naiveDateLocale = computed(() => (locale.value.startsWith("zh") ? dateZhCN : dateEnUS));
 
 // 操作系统主题
 const osTheme = useOsTheme();

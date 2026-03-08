@@ -6,8 +6,10 @@ import { isValidUrl } from "@/utils/validate";
 import { useSettingStore } from "@/stores/setting";
 import { useStatusStore } from "@/stores/status";
 import { useVideoStore } from "@/stores/video";
+import { useI18n } from "vue-i18n";
 import type { ThumbnailInfo, VideoInfo } from "@/types";
 
+const { t } = useI18n();
 const settingStore = useSettingStore();
 const statusStore = useStatusStore();
 const videoStore = useVideoStore();
@@ -33,10 +35,10 @@ const getExtFromUrl = (url: string): string => {
 };
 
 /** 获取分辨率显示文本 */
-const getResolutionLabel = (t: ThumbnailInfo): string => {
-  if (t.width && t.height) return `${t.width} x ${t.height}`;
-  if (t.resolution) return t.resolution;
-  return "未知";
+const getResolutionLabel = (thumb: ThumbnailInfo): string => {
+  if (thumb.width && thumb.height) return `${thumb.width} x ${thumb.height}`;
+  if (thumb.resolution) return thumb.resolution;
+  return t("common.unknown");
 };
 
 /** 获取视频信息并提取封面列表 */
@@ -53,11 +55,10 @@ const handleFetch = async () => {
     });
     videoTitle.value = info.title || "";
     const list = info.thumbnails || [];
-    // 优先保留有明确尺寸的项，按分辨率去重
-    const withSize = list.filter((t) => t.url && t.width && t.height);
+    const withSize = list.filter((item) => item.url && item.width && item.height);
     const seen = new Set<string>();
-    const deduped = withSize.filter((t) => {
-      const key = `${t.width}x${t.height}`;
+    const deduped = withSize.filter((item) => {
+      const key = `${item.width}x${item.height}`;
       if (seen.has(key)) return false;
       seen.add(key);
       return true;
@@ -67,10 +68,9 @@ const handleFetch = async () => {
         (a, b) => (b.width || 0) * (b.height || 0) - (a.width || 0) * (a.height || 0),
       );
     } else if (info.thumbnail) {
-      // 没有带尺寸的项，使用主封面 URL
       thumbnails.value = [{ url: info.thumbnail, id: "default" }];
     } else {
-      window.$message.warning("未找到封面图片");
+      window.$message.warning(t("toolbox.noThumbnailFound"));
     }
   } catch (e: unknown) {
     const msg = String(e);
@@ -92,9 +92,9 @@ const handleSave = async (thumb: ThumbnailInfo) => {
     : `thumbnail.${ext}`;
 
   const filePath = await save({
-    title: "保存封面图片",
+    title: t("toolbox.saveThumbnail"),
     defaultPath: defaultName,
-    filters: [{ name: "图片文件", extensions: [ext, "jpg", "png", "webp"] }],
+    filters: [{ name: t("toolbox.imageFiles"), extensions: [ext, "jpg", "png", "webp"] }],
   });
   if (!filePath) return;
 
@@ -106,9 +106,9 @@ const handleSave = async (thumb: ThumbnailInfo) => {
       filePath,
       proxy: settingStore.proxy || null,
     });
-    window.$message.success("封面已保存");
+    window.$message.success(t("toolbox.thumbnailSaved"));
   } catch (e: unknown) {
-    window.$message.error(`保存失败: ${e}`);
+    window.$message.error(t("common.saveFailed", { e }));
   } finally {
     savingId.value = null;
   }
@@ -122,15 +122,15 @@ const handleSave = async (thumb: ThumbnailInfo) => {
         <template #icon>
           <n-icon><icon-mdi-arrow-left /></n-icon>
         </template>
-        返回
+        {{ $t('common.back') }}
       </n-button>
-      <n-text strong style="font-size: 15px">下载视频封面</n-text>
+      <n-text strong style="font-size: 15px">{{ $t('toolbox.thumbnailTitle') }}</n-text>
     </n-flex>
 
     <n-card size="small">
       <n-flex vertical :size="12">
         <n-text depth="3" style="font-size: 13px">
-          获取视频的全部封面图片，选择清晰度后另存为本地文件
+          {{ $t('toolbox.thumbnailPageDesc') }}
         </n-text>
         <n-button
           type="primary"
@@ -141,13 +141,12 @@ const handleSave = async (thumb: ThumbnailInfo) => {
           <template #icon>
             <n-icon><icon-mdi-image-search /></n-icon>
           </template>
-          获取封面列表
+          {{ $t('toolbox.fetchThumbnails') }}
         </n-button>
       </n-flex>
     </n-card>
 
-    <!-- 封面列表 -->
-    <n-card v-if="thumbnails.length" size="small" :title="`共 ${thumbnails.length} 张封面`">
+    <n-card v-if="thumbnails.length" size="small" :title="$t('toolbox.thumbnailCount', { n: thumbnails.length })">
       <n-list hoverable clickable bordered>
         <n-list-item v-for="thumb in thumbnails" :key="thumb.id || thumb.url">
           <n-flex align="center" :size="12" :wrap="false">
@@ -170,7 +169,7 @@ const handleSave = async (thumb: ThumbnailInfo) => {
                 <template #icon>
                   <n-icon><icon-mdi-content-save-outline /></n-icon>
                 </template>
-                另存为
+                {{ $t('common.saveAs') }}
               </n-button>
             </n-flex>
           </n-flex>

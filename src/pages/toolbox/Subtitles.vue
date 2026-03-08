@@ -7,9 +7,11 @@ import { mergeBilingualSrt, mergeBilingualVtt } from "@/utils/subtitle";
 import { useSettingStore } from "@/stores/setting";
 import { useStatusStore } from "@/stores/status";
 import { useVideoStore } from "@/stores/video";
+import { useI18n } from "vue-i18n";
 import type { SubtitleInfo, SubtitleTrack } from "@/types";
 import type { SelectOption } from "naive-ui";
 
+const { t } = useI18n();
 const settingStore = useSettingStore();
 const statusStore = useStatusStore();
 const videoStore = useVideoStore();
@@ -22,7 +24,6 @@ const videoTitle = ref("");
 const includeAutoSubs = ref(false);
 const exportFormat = ref("srt");
 
-// 字幕数据
 interface SubItem {
   lang: string;
   name: string;
@@ -32,7 +33,6 @@ interface SubItem {
 
 const subtitleList = ref<SubItem[]>([]);
 
-// 双语合成
 const primaryLang = ref<string | null>(null);
 const secondaryLang = ref<string | null>(null);
 
@@ -67,7 +67,7 @@ const displayList = computed(() => {
 /** 语言选项（用于双语合成选择器） */
 const langOptions = computed<SelectOption[]>(() =>
   displayList.value.map((s) => ({
-    label: `${s.name || s.lang}${s.isAuto ? " (自动)" : ""}`,
+    label: `${s.name || s.lang}${s.isAuto ? ` (${t("toolbox.auto")})` : ""}`,
     value: `${s.lang}|${s.isAuto ? "auto" : "manual"}`,
   })),
 );
@@ -90,7 +90,6 @@ const handleFetch = async () => {
 
     const items: SubItem[] = [];
 
-    // 手动上传的字幕
     if (info.subtitles) {
       for (const [lang, tracks] of Object.entries(info.subtitles)) {
         if (tracks && tracks.length > 0) {
@@ -100,7 +99,6 @@ const handleFetch = async () => {
       }
     }
 
-    // 自动生成的字幕
     if (info.automatic_captions) {
       for (const [lang, tracks] of Object.entries(info.automatic_captions)) {
         if (tracks && tracks.length > 0) {
@@ -115,7 +113,7 @@ const handleFetch = async () => {
     subtitleList.value = items;
 
     if (items.length === 0) {
-      window.$message.warning("未找到可用字幕");
+      window.$message.warning(t("toolbox.noSubtitlesFound"));
     }
   } catch (e: unknown) {
     const msg = String(e);
@@ -134,7 +132,7 @@ const handleSave = async (item: SubItem) => {
   const ext = exportFormat.value;
   const url = findTrackUrl(item.tracks, ext);
   if (!url) {
-    window.$message.warning("未找到可用的字幕下载链接");
+    window.$message.warning(t("toolbox.noSubtitleUrl"));
     return;
   }
 
@@ -143,9 +141,9 @@ const handleSave = async (item: SubItem) => {
     : `subtitle.${item.lang}.${ext}`;
 
   const filePath = await save({
-    title: "保存字幕文件",
+    title: t("toolbox.saveSubtitleFile"),
     defaultPath: defaultName,
-    filters: [{ name: "字幕文件", extensions: [ext] }],
+    filters: [{ name: t("toolbox.subtitleFiles"), extensions: [ext] }],
   });
   if (!filePath) return;
 
@@ -157,9 +155,9 @@ const handleSave = async (item: SubItem) => {
       filePath,
       proxy: settingStore.proxy || null,
     });
-    window.$message.success("字幕已保存");
+    window.$message.success(t("toolbox.subtitleSaved"));
   } catch (e: unknown) {
-    window.$message.error(`保存失败: ${e}`);
+    window.$message.error(t("common.saveFailed", { e }));
   } finally {
     savingKey.value = null;
   }
@@ -175,11 +173,11 @@ const findSubItem = (val: string): SubItem | undefined => {
 /** 合成双语字幕并另存为 */
 const handleSaveBilingual = async () => {
   if (!primaryLang.value || !secondaryLang.value) {
-    window.$message.warning("请选择主语言和副语言");
+    window.$message.warning(t("toolbox.selectBothLangs"));
     return;
   }
   if (primaryLang.value === secondaryLang.value) {
-    window.$message.warning("主语言和副语言不能相同");
+    window.$message.warning(t("toolbox.langsCantBeSame"));
     return;
   }
 
@@ -189,14 +187,14 @@ const handleSaveBilingual = async () => {
   const primary = findSubItem(primaryLang.value);
   const secondary = findSubItem(secondaryLang.value);
   if (!primary || !secondary) {
-    window.$message.warning("无法找到所选语言的字幕");
+    window.$message.warning(t("toolbox.cantFindSubtitles"));
     return;
   }
 
   const primaryUrl = findTrackUrl(primary.tracks, mergeFormat);
   const secondaryUrl = findTrackUrl(secondary.tracks, mergeFormat);
   if (!primaryUrl || !secondaryUrl) {
-    window.$message.warning("未找到可用的字幕下载链接");
+    window.$message.warning(t("toolbox.noSubtitleUrl"));
     return;
   }
 
@@ -205,9 +203,9 @@ const handleSaveBilingual = async () => {
     : `subtitle.${primary.lang}-${secondary.lang}.${mergeFormat}`;
 
   const filePath = await save({
-    title: "保存双语字幕",
+    title: t("toolbox.saveBilingualSubtitle"),
     defaultPath: defaultName,
-    filters: [{ name: "字幕文件", extensions: [mergeFormat] }],
+    filters: [{ name: t("toolbox.subtitleFiles"), extensions: [mergeFormat] }],
   });
   if (!filePath) return;
 
@@ -225,9 +223,9 @@ const handleSaveBilingual = async () => {
         : mergeBilingualSrt(primaryText, secondaryText);
 
     await invoke("tool_save_text_to_file", { content: merged, filePath });
-    window.$message.success("双语字幕已保存");
+    window.$message.success(t("toolbox.bilingualSaved"));
   } catch (e: unknown) {
-    window.$message.error(`保存失败: ${e}`);
+    window.$message.error(t("common.saveFailed", { e }));
   } finally {
     savingBilingual.value = false;
   }
@@ -241,15 +239,15 @@ const handleSaveBilingual = async () => {
         <template #icon>
           <n-icon><icon-mdi-arrow-left /></n-icon>
         </template>
-        返回
+        {{ $t('common.back') }}
       </n-button>
-      <n-text strong style="font-size: 15px">下载视频字幕</n-text>
+      <n-text strong style="font-size: 15px">{{ $t('toolbox.subtitlesTitle') }}</n-text>
     </n-flex>
 
     <n-card size="small">
       <n-flex vertical :size="12">
         <n-text depth="3" style="font-size: 13px">
-          获取视频的全部字幕轨道，选择格式后另存为本地文件，支持双语合成
+          {{ $t('toolbox.subtitlesPageDesc') }}
         </n-text>
         <n-button
           type="primary"
@@ -260,16 +258,15 @@ const handleSaveBilingual = async () => {
           <template #icon>
             <n-icon><icon-mdi-subtitles-outline /></n-icon>
           </template>
-          获取字幕列表
+          {{ $t('toolbox.fetchSubtitles') }}
         </n-button>
       </n-flex>
     </n-card>
 
-    <!-- 字幕列表 -->
-    <n-card v-if="subtitleList.length" size="small" :title="`共 ${displayList.length} 条字幕`">
+    <n-card v-if="subtitleList.length" size="small" :title="$t('toolbox.subtitleCount', { n: displayList.length })">
       <template #header-extra>
         <n-flex align="center" :size="8">
-          <n-checkbox v-model:checked="includeAutoSubs" size="small">包含自动生成</n-checkbox>
+          <n-checkbox v-model:checked="includeAutoSubs" size="small">{{ $t('toolbox.includeAutoGenerated') }}</n-checkbox>
           <n-select
             v-model:value="exportFormat"
             :options="formatOptions"
@@ -283,7 +280,7 @@ const handleSaveBilingual = async () => {
           <n-flex align="center" justify="space-between">
             <n-flex align="center" :size="6">
               <n-text strong style="font-size: 13px">{{ item.name || item.lang }}</n-text>
-              <n-tag v-if="item.isAuto" size="small" type="info" :bordered="false">自动</n-tag>
+              <n-tag v-if="item.isAuto" size="small" type="info" :bordered="false">{{ $t('toolbox.auto') }}</n-tag>
               <n-text depth="3" style="font-size: 12px">{{ item.lang }}</n-text>
             </n-flex>
             <n-button
@@ -294,24 +291,23 @@ const handleSaveBilingual = async () => {
               <template #icon>
                 <n-icon><icon-mdi-content-save-outline /></n-icon>
               </template>
-              另存为
+              {{ $t('common.saveAs') }}
             </n-button>
           </n-flex>
         </n-list-item>
       </n-list>
     </n-card>
 
-    <!-- 双语合成 -->
-    <n-card v-if="subtitleList.length >= 2" size="small" title="双语合成">
+    <n-card v-if="subtitleList.length >= 2" size="small" :title="$t('toolbox.bilingualMerge')">
       <n-flex vertical :size="10">
         <n-text depth="3" style="font-size: 13px">
-          选择两种语言，合成双语字幕文件（主语言在上，副语言在下）
+          {{ $t('toolbox.bilingualDesc') }}
         </n-text>
         <n-flex align="center" :size="8">
           <n-select
             v-model:value="primaryLang"
             :options="langOptions"
-            placeholder="主语言"
+            :placeholder="$t('toolbox.primaryLang')"
             size="small"
             clearable
             style="flex: 1"
@@ -319,7 +315,7 @@ const handleSaveBilingual = async () => {
           <n-select
             v-model:value="secondaryLang"
             :options="langOptions"
-            placeholder="副语言"
+            :placeholder="$t('toolbox.secondaryLang')"
             size="small"
             clearable
             style="flex: 1"
@@ -335,7 +331,7 @@ const handleSaveBilingual = async () => {
           <template #icon>
             <n-icon><icon-mdi-content-save-outline /></n-icon>
           </template>
-          合成双语字幕并另存为
+          {{ $t('toolbox.saveBilingual') }}
         </n-button>
       </n-flex>
     </n-card>

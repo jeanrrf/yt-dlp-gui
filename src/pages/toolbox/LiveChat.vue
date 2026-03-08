@@ -6,9 +6,11 @@ import { isValidUrl } from "@/utils/validate";
 import { useSettingStore } from "@/stores/setting";
 import { useStatusStore } from "@/stores/status";
 import { useVideoStore } from "@/stores/video";
+import { useI18n } from "vue-i18n";
 import type { LiveChatMessage } from "@/types";
 import type { DataTableColumns, DataTableRowKey } from "naive-ui";
 
+const { t } = useI18n();
 const settingStore = useSettingStore();
 const statusStore = useStatusStore();
 const videoStore = useVideoStore();
@@ -24,24 +26,22 @@ const useRegex = ref(false);
 
 const urlValid = computed(() => isValidUrl(toolUrl.value.trim()));
 
-// 可导出的字段定义
-const fieldDefs = [
-  { key: "time", label: "时间" },
-  { key: "author", label: "发送者" },
-  { key: "message", label: "消息内容" },
-  { key: "msg_type", label: "类型" },
-  { key: "amount", label: "打赏金额" },
-  { key: "channel_id", label: "频道 ID" },
-  { key: "timestamp_usec", label: "时间戳 (μs)" },
-] as const;
+const fieldDefs = computed(() => [
+  { key: "time", label: t("toolbox.time") },
+  { key: "author", label: t("toolbox.sender") },
+  { key: "message", label: t("toolbox.message") },
+  { key: "msg_type", label: t("toolbox.type") },
+  { key: "amount", label: t("toolbox.tipAmount") },
+  { key: "channel_id", label: t("toolbox.channelId") },
+  { key: "timestamp_usec", label: t("toolbox.timestampUs") },
+] as const);
 
-type FieldKey = (typeof fieldDefs)[number]["key"];
-const allFieldKeys = fieldDefs.map((f) => f.key);
+type FieldKey = "time" | "author" | "message" | "msg_type" | "amount" | "channel_id" | "timestamp_usec";
+const allFieldKeys: FieldKey[] = ["time", "author", "message", "msg_type", "amount", "channel_id", "timestamp_usec"];
 const selectedFields = ref<FieldKey[]>([...allFieldKeys]);
 
 const exportFormat = ref<"json" | "csv">("json");
 
-// 字段全选
 const allFieldsSelected = computed(() => selectedFields.value.length === allFieldKeys.length);
 const someFieldsSelected = computed(
   () => selectedFields.value.length > 0 && selectedFields.value.length < allFieldKeys.length,
@@ -50,14 +50,12 @@ const handleFieldSelectAll = (checked: boolean) => {
   selectedFields.value = checked ? [...allFieldKeys] : [];
 };
 
-// 类型标签映射
-const typeLabels: Record<string, string> = {
-  text: "普通",
-  paid: "打赏",
-  membership: "会员",
-};
+const typeLabels = computed<Record<string, string>>(() => ({
+  text: t("toolbox.typeNormal"),
+  paid: t("toolbox.typePaid"),
+  membership: t("toolbox.typeMembership"),
+}));
 
-// 筛选：关键词或正则
 const filterRegex = computed(() => {
   const text = debouncedFilter.value.trim();
   if (!text) return null;
@@ -89,30 +87,28 @@ const filteredMessages = computed(() => {
   );
 });
 
-// 筛选结果变化时清空选中
 watch(debouncedFilter, () => {
   checkedKeys.value = [];
 });
 
-// 数据表格列
-const columns: DataTableColumns<LiveChatMessage> = [
+const columns = computed<DataTableColumns<LiveChatMessage>>(() => [
   { type: "selection" },
-  { title: "时间", key: "time", width: 100 },
-  { title: "发送者", key: "author", width: 160, ellipsis: { tooltip: true } },
+  { title: t("toolbox.time"), key: "time", width: 100 },
+  { title: t("toolbox.sender"), key: "author", width: 160, ellipsis: { tooltip: true } },
   {
-    title: "消息内容",
+    title: t("toolbox.message"),
     key: "message",
     minWidth: 200,
     ellipsis: { tooltip: true },
   },
   {
-    title: "类型",
+    title: t("toolbox.type"),
     key: "msg_type",
     width: 80,
-    render: (row) => typeLabels[row.msg_type] || row.msg_type,
+    render: (row) => typeLabels.value[row.msg_type] || row.msg_type,
   },
-  { title: "金额", key: "amount", width: 100 },
-];
+  { title: t("toolbox.amount"), key: "amount", width: 100 },
+]);
 
 const rowKey = (row: LiveChatMessage) => row.idx;
 
@@ -187,13 +183,13 @@ const exportCount = computed(() => {
 /** 另存为文件 */
 const handleSave = async () => {
   if (selectedFields.value.length === 0) {
-    window.$message.warning("请至少选择一个导出字段");
+    window.$message.warning(t("toolbox.selectAtLeastOneField"));
     return;
   }
 
   const ext = exportFormat.value;
   const filePath = await save({
-    title: "保存弹幕数据",
+    title: t("toolbox.saveChatData"),
     defaultPath: `live_chat.${ext}`,
     filters: [{ name: ext.toUpperCase(), extensions: [ext] }],
   });
@@ -204,9 +200,9 @@ const handleSave = async () => {
     const data = buildExportData();
     const content = ext === "json" ? exportJson(data) : exportCsv(data);
     await invoke("tool_save_text_to_file", { content, filePath });
-    window.$message.success("弹幕数据已保存");
+    window.$message.success(t("toolbox.chatDataSaved"));
   } catch (e: unknown) {
-    window.$message.error(`保存失败: ${e}`);
+    window.$message.error(t("common.saveFailed", { e }));
   } finally {
     saving.value = false;
   }
@@ -220,15 +216,15 @@ const handleSave = async () => {
         <template #icon>
           <n-icon><icon-mdi-arrow-left /></n-icon>
         </template>
-        返回
+        {{ $t('common.back') }}
       </n-button>
-      <n-text strong style="font-size: 15px">获取直播弹幕</n-text>
+      <n-text strong style="font-size: 15px">{{ $t('toolbox.livechatTitle') }}</n-text>
     </n-flex>
 
     <n-card size="small">
       <n-flex vertical :size="12">
         <n-text depth="3" style="font-size: 13px">
-          获取直播回放的全部聊天弹幕，支持筛选字段后导出为 JSON 或 CSV
+          {{ $t('toolbox.livechatPageDesc') }}
         </n-text>
         <n-button
           type="primary"
@@ -239,13 +235,12 @@ const handleSave = async () => {
           <template #icon>
             <n-icon><icon-mdi-message-text-outline /></n-icon>
           </template>
-          获取弹幕
+          {{ $t('toolbox.fetchChat') }}
         </n-button>
       </n-flex>
     </n-card>
 
-    <!-- 弹幕数据表格 -->
-    <n-card v-if="messages.length" size="small" :title="`共 ${messages.length} 条弹幕`">
+    <n-card v-if="messages.length" size="small" :title="$t('toolbox.chatCount', { n: messages.length })">
       <template #header-extra>
         <n-flex align="center" :size="8">
           <n-popover trigger="click" placement="bottom-end">
@@ -254,7 +249,7 @@ const handleSave = async () => {
                 <template #icon>
                   <n-icon><icon-mdi-filter-outline /></n-icon>
                 </template>
-                导出字段
+                {{ $t('toolbox.exportFields') }}
               </n-button>
             </template>
             <n-flex vertical :size="8" style="min-width: 140px">
@@ -263,7 +258,7 @@ const handleSave = async () => {
                 :indeterminate="someFieldsSelected"
                 @update:checked="handleFieldSelectAll"
               >
-                全选
+                {{ $t('common.selectAll') }}
               </n-checkbox>
               <n-checkbox-group v-model:value="selectedFields">
                 <n-flex vertical :size="4">
@@ -292,17 +287,16 @@ const handleSave = async () => {
             <template #icon>
               <n-icon><icon-mdi-content-save-outline /></n-icon>
             </template>
-            另存为 ({{ exportCount }})
+            {{ $t('toolbox.saveAsCount', { n: exportCount }) }}
           </n-button>
         </n-flex>
       </template>
 
-      <!-- 筛选输入框 -->
       <n-flex vertical :size="10">
         <n-flex align="center" :size="8">
           <n-input
             v-model:value="filterText"
-            placeholder="搜索消息内容或发送者..."
+            :placeholder="$t('toolbox.searchPlaceholder')"
             size="small"
             clearable
             style="flex: 1"
@@ -325,7 +319,7 @@ const handleSave = async () => {
                 .*
               </n-button>
             </template>
-            {{ useRegex ? '正则模式已开启' : '点击启用正则匹配' }}
+            {{ useRegex ? $t('toolbox.regexEnabled') : $t('toolbox.enableRegex') }}
           </n-tooltip>
         </n-flex>
         <n-text
@@ -333,7 +327,7 @@ const handleSave = async () => {
           depth="3"
           style="font-size: 12px"
         >
-          匹配 {{ filteredMessages.length }} / {{ messages.length }} 条
+          {{ $t('toolbox.matchCount', { matched: filteredMessages.length, total: messages.length }) }}
         </n-text>
         <n-text v-if="regexError" type="error" style="font-size: 12px">
           {{ regexError }}

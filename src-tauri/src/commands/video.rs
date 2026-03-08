@@ -15,7 +15,7 @@ pub async fn save_cookie_text(app: AppHandle, text: String) -> Result<String, St
     let cookie_path = utils::get_cookie_path(&app)?;
     tokio::fs::write(&cookie_path, text.as_bytes())
         .await
-        .map_err(|e| format!("保存 Cookie 文件失败: {}", e))?;
+        .map_err(|e| format!("err_save_cookie:{}", e))?;
     Ok(cookie_path.to_string_lossy().to_string())
 }
 
@@ -31,7 +31,7 @@ pub async fn fetch_video_info(
 ) -> Result<Value, String> {
     let ytdlp_path = utils::get_ytdlp_path(&app)?;
     if !ytdlp_path.exists() {
-        return Err("yt-dlp 未安装，请先在设置中下载".to_string());
+        return Err("err_ytdlp_not_installed".to_string());
     }
 
     let mut args = vec![
@@ -68,14 +68,14 @@ pub async fn fetch_video_info(
     let output = cmd
         .output()
         .await
-        .map_err(|e| format!("运行 yt-dlp 失败: {}", e))?;
+        .map_err(|e| format!("err_run_ytdlp:{}", e))?;
 
     let stdout = String::from_utf8_lossy(&output.stdout);
 
     // 优先从 stdout 解析 JSON（yt-dlp 可能在 stderr 输出警告但仍成功）
     if let Some(json_str) = stdout.lines().find(|line| line.trim_start().starts_with('{')) {
         return serde_json::from_str(json_str)
-            .map_err(|e| format!("解析视频信息失败: {}", e));
+            .map_err(|e| format!("err_parse_video_info:{}", e));
     }
 
     // 未找到 JSON，从 stderr 提取 ERROR 行作为错误信息

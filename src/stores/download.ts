@@ -9,6 +9,7 @@ import {
 import localforage from "localforage";
 import type { DownloadTask } from "@/types";
 import { useSettingStore } from "@/stores/setting";
+import i18n from "@/locales";
 
 const storage = localforage.createInstance({
   name: "yt-dlp-gui",
@@ -32,8 +33,6 @@ export const useDownloadStore = defineStore("download", () => {
   let listenersSetup = false;
   let saveTimer: ReturnType<typeof setTimeout> | null = null;
 
-  // ========== 队列 ==========
-
   /** 当前正在下载的任务数 */
   const activeCount = computed(
     () => tasks.value.filter((t) => t.status === "downloading").length,
@@ -55,7 +54,7 @@ export const useDownloadStore = defineStore("download", () => {
       });
     } catch {
       next.status = "error";
-      next.error = "启动下载失败";
+      next.error = i18n.global.t("downloads.startFailed");
     }
   };
 
@@ -65,8 +64,6 @@ export const useDownloadStore = defineStore("download", () => {
     const max = settingStore.maxConcurrentDownloads;
     return max <= 0 || activeCount.value < max;
   };
-
-  // ========== 通知 ==========
 
   const notify = async (title: string, body: string) => {
     const settingStore = useSettingStore();
@@ -89,13 +86,11 @@ export const useDownloadStore = defineStore("download", () => {
     }
   };
 
-  // ========== 持久化 ==========
-
-  /** 防抖保存任务列表到 IndexedDB，延迟 500ms */
+  /** 防抖保存任务列表到 IndexedDB */
   const saveTasks = () => {
     if (saveTimer) clearTimeout(saveTimer);
     saveTimer = setTimeout(() => {
-      storage.setItem(STORAGE_KEY, JSON.parse(JSON.stringify(tasks.value)));
+      storage.setItem(STORAGE_KEY, structuredClone(toRaw(tasks.value)));
     }, 500);
   };
 
@@ -106,7 +101,7 @@ export const useDownloadStore = defineStore("download", () => {
       for (const task of saved) {
         if (task.status === "downloading" || task.status === "paused" || task.status === "queued") {
           task.status = "error";
-          task.error = "应用重启，下载已中断";
+          task.error = i18n.global.t("downloads.appRestarted");
           task.speed = "";
         }
         if (!Array.isArray(task.logs)) task.logs = [];
@@ -143,9 +138,7 @@ export const useDownloadStore = defineStore("download", () => {
 
   watch(tasks, saveTasks, { deep: true });
 
-  // ========== 事件监听 ==========
-
-  /** 注册 Tauri 后端事件监听（进度、日志、完成、错误），仅初始化一次 */
+  /** 注册 Tauri 后端事件监听，仅初始化一次 */
   const setupListeners = async () => {
     if (listenersSetup) return;
     listenersSetup = true;
@@ -175,9 +168,8 @@ export const useDownloadStore = defineStore("download", () => {
         task.percent = 100;
         task.speed = "";
         if (event.payload.outputFile) task.outputFile = event.payload.outputFile;
-        notify("下载完成", task.title || "视频下载已完成");
+        notify(i18n.global.t("downloads.notifyComplete"), task.title || i18n.global.t("downloads.notifyCompleteBody"));
       }
-      // 下载完成后尝试启动队列中的下一个
       tryStartNext();
     });
 
@@ -188,16 +180,12 @@ export const useDownloadStore = defineStore("download", () => {
         task.error = event.payload.error;
         task.speed = "";
       }
-      // 出错后尝试启动队列中的下一个
       tryStartNext();
     });
   };
 
-  // Auto-init
   loadTasks();
   setupListeners();
-
-  // ========== 操作 ==========
 
   /** 添加新的下载任务到列表顶部 */
   const addTask = (task: DownloadTask) => {
@@ -239,7 +227,6 @@ export const useDownloadStore = defineStore("download", () => {
       }
     }
 
-    // 取消后尝试启动队列中的下一个
     tryStartNext();
   };
 

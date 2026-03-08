@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { open } from "@tauri-apps/plugin-dialog";
 import { useSettingStore } from "@/stores/setting";
+import { useI18n } from "vue-i18n";
 
+const { t } = useI18n();
 const settingStore = useSettingStore();
 
 /** 打开文件夹选择对话框 */
@@ -9,7 +11,7 @@ const handleSelectDir = async () => {
   const selected = await open({
     directory: true,
     multiple: false,
-    title: "选择下载目录",
+    title: t("downloadDir.selectDir"),
   });
   if (selected) {
     settingStore.downloadDir = selected as string;
@@ -18,11 +20,11 @@ const handleSelectDir = async () => {
 </script>
 
 <template>
-  <n-card title="下载目录" size="small">
+  <n-card :title="$t('downloadDir.title')" size="small">
     <n-flex align="center" :size="8">
       <n-input
         :value="settingStore.downloadDir"
-        placeholder="未设置下载目录"
+        :placeholder="$t('downloadDir.notSet')"
         size="small"
         readonly
         style="flex: 1"
@@ -33,7 +35,7 @@ const handleSelectDir = async () => {
             <icon-mdi-folder-open-outline />
           </n-icon>
         </template>
-        选择
+        {{ $t('common.select') }}
       </n-button>
     </n-flex>
   </n-card>

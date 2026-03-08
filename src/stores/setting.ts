@@ -1,13 +1,21 @@
 import { defineStore } from "pinia";
+import { setI18nLocale, resolveLocale } from "@/locales";
 
 export const useSettingStore = defineStore("setting", () => {
-  /** 主题模式: auto 跟随系统, light 亮色, dark 暗色 */
+  /** 界面语言 */
+  const locale = ref(resolveLocale(""));
+
+  watch(locale, (val) => {
+    setI18nLocale(val);
+  });
+
+  /** 主题模式 */
   const themeMode = ref<"auto" | "light" | "dark">("auto");
 
-  /** 默认下载目录 */
+  /** 下载目录 */
   const downloadDir = ref("");
 
-  /** Cookie 模式: none 不使用, text 手动输入, file 文件读取 */
+  /** Cookie 模式 */
   const cookieMode = ref<"none" | "text" | "file">("none");
 
   /** Cookie 文本内容（Netscape 格式） */
@@ -16,25 +24,26 @@ export const useSettingStore = defineStore("setting", () => {
   /** Cookie 文件路径 */
   const cookieFile = ref("");
 
-  /** 代理地址，如 http://127.0.0.1:7890 或 socks5://... */
+  /** 代理地址 */
   const proxy = ref("");
 
-  /** 文件名模板，使用 yt-dlp output template 语法 */
+  /** 文件名输出模板 */
   const outputTemplate = ref("%(title).200s [%(id)s].%(ext)s");
 
-  /** 并发分片数（--concurrent-fragments），0 表示不启用 */
+  /** 并发分片数，0 = 不启用 */
   const concurrentFragments = ref(0);
 
   /** 文件已存在时不覆盖 */
   const noOverwrites = ref(false);
 
-  /** 最大同时下载任务数，0 表示不限制 */
+  /** 最大同时下载数，0 = 不限制 */
   const maxConcurrentDownloads = ref(0);
 
-  /** 下载完成通知模式: none 不通知, app 应用内, system 系统通知, all 全部 */
+  /** 下载完成通知模式 */
   const notifyMode = ref<"none" | "app" | "system" | "all">("system");
 
   return {
+    locale,
     themeMode,
     downloadDir,
     cookieMode,

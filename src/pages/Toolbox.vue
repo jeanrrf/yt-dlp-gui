@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { readText } from "@tauri-apps/plugin-clipboard-manager";
 import { isValidUrl } from "@/utils/validate";
+import { useI18n } from "vue-i18n";
 
+const { t } = useI18n();
 const toolUrl = ref("");
 provide("toolUrl", toolUrl);
 
@@ -10,27 +12,26 @@ const handlePaste = async () => {
     const text = await readText();
     const trimmed = text.trim();
     if (!trimmed) {
-      window.$message.warning("剪贴板为空");
+      window.$message.warning(t("clipboard.empty"));
       return;
     }
     if (!isValidUrl(trimmed)) {
-      window.$message.warning("剪贴板内容不是有效的链接");
+      window.$message.warning(t("clipboard.invalidUrl"));
       return;
     }
     toolUrl.value = trimmed;
   } catch {
-    window.$message.warning("无法读取剪贴板");
+    window.$message.warning(t("clipboard.readFailed"));
   }
 };
 </script>
 
 <template>
-  <div class="toolbox-page">
-    <!-- URL 输入 -->
+  <n-flex vertical :size="16" class="toolbox-page">
     <n-flex :size="8">
       <n-input
         v-model:value="toolUrl"
-        placeholder="请输入视频链接..."
+        :placeholder="$t('home.inputPlaceholder')"
         clearable
         style="flex: 1"
       />
@@ -38,7 +39,7 @@ const handlePaste = async () => {
         <template #icon>
           <n-icon><icon-mdi-content-paste /></n-icon>
         </template>
-        粘贴
+        {{ $t('common.paste') }}
       </n-button>
     </n-flex>
 
@@ -47,13 +48,5 @@ const handlePaste = async () => {
         <component :is="RouteComponent" />
       </Transition>
     </router-view>
-  </div>
+  </n-flex>
 </template>
-
-<style scoped lang="scss">
-.toolbox-page {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-</style>
