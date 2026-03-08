@@ -24,3 +24,8 @@ dist-ssr
 *.sw?
 
 .test/*
+
+# Tauri signing keys
+~
+*.key
+*.key.pub

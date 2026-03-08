@@ -122,7 +122,16 @@
     "alreadyLatest": "Ya tienes la versión más reciente",
     "updatedToLatest": "Actualizado a la última versión",
     "updateFailed": "Error en la actualización: {e}",
-    "denoDownloadComplete": "Deno se ha descargado correctamente"
+    "denoDownloadComplete": "Deno se ha descargado correctamente",
+    "checkAppUpdate": "Buscar actualizaciones",
+    "appNewVersionFound": "Nueva versión encontrada",
+    "appUpdateNotes": "Notas de la versión",
+    "appUpdateNow": "Actualizar ahora",
+    "appUpdateLater": "Más tarde",
+    "appUpdating": "Descargando actualización...",
+    "appUpdateSuccess": "Actualización completada, reiniciando",
+    "appUpdateFailed": "Error en la actualización: {e}",
+    "appIsLatest": "Ya tienes la última versión"
   },
   "detail": {
     "videoLink": "Enlace del vídeo",

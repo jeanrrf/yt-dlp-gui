@@ -2,12 +2,17 @@
 import type { YtdlpStatus, DenoStatus, DownloadProgress } from "@/types";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import { check } from "@tauri-apps/plugin-updater";
 import { useSettingStore } from "@/stores/setting";
+import { useStatusStore } from "@/stores/status";
 import { useI18n } from "vue-i18n";
 import { localeEntries } from "@/locales";
+import { getVersion } from "@tauri-apps/api/app";
 
 const { t } = useI18n();
 const settingStore = useSettingStore();
+const statusStore = useStatusStore();
+const appVersion = ref("");
 
 const platform = ref("");
 const platformLabel = computed(() => {
@@ -149,6 +154,27 @@ const handleDownloadDeno = async () => {
   }
 };
 
+/** 检查应用更新 */
+const appUpdateChecking = ref(false);
+
+const handleCheckAppUpdate = async () => {
+  appUpdateChecking.value = true;
+  try {
+    const update = await check();
+    if (update) {
+      statusStore.updateVersion = update.version;
+      statusStore.updateNotes = update.body || "";
+      statusStore.showUpdateModal = true;
+    } else {
+      window.$message.success(t("settings.appIsLatest"));
+    }
+  } catch (e: unknown) {
+    window.$message.error(t("settings.appUpdateFailed", { e }));
+  } finally {
+    appUpdateChecking.value = false;
+  }
+};
+
 /** 刷新所有依赖状态 */
 const refreshAll = () => {
   checkYtdlpStatus();
@@ -157,6 +183,7 @@ const refreshAll = () => {
 
 onMounted(async () => {
   platform.value = await invoke<string>("get_platform");
+  appVersion.value = await getVersion();
   refreshAll();
 });
 </script>
@@ -387,6 +414,18 @@ onMounted(async () => {
     </n-card>
 
     <n-card :title="$t('settings.about')" size="small" class="section-card">
+      <template #header-extra>
+        <n-button
+          :loading="appUpdateChecking"
+          strong
+          secondary
+          round
+          size="small"
+          @click="handleCheckAppUpdate"
+        >
+          {{ $t('settings.checkAppUpdate') }}
+        </n-button>
+      </template>
       <n-flex vertical :size="8">
         <n-text depth="3" style="font-size: 13px">
           {{ $t('settings.aboutDesc') }}
@@ -394,7 +433,7 @@ onMounted(async () => {
         <div class="info-list">
           <div class="info-row">
             <span class="info-label">{{ $t('settings.version') }}</span>
-            <n-text code>v0.1.0</n-text>
+            <n-text code>v{{ appVersion }}</n-text>
           </div>
           <div class="info-row">
             <span class="info-label">{{ $t('settings.platform') }}</span>

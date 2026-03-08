@@ -122,7 +122,16 @@
     "alreadyLatest": "Already up to date",
     "updatedToLatest": "Updated to latest version",
     "updateFailed": "Update failed: {e}",
-    "denoDownloadComplete": "Deno download complete"
+    "denoDownloadComplete": "Deno download complete",
+    "checkAppUpdate": "Check for updates",
+    "appNewVersionFound": "New version found",
+    "appUpdateNotes": "Release notes",
+    "appUpdateNow": "Update now",
+    "appUpdateLater": "Later",
+    "appUpdating": "Downloading update...",
+    "appUpdateSuccess": "Update complete, restarting",
+    "appUpdateFailed": "Update failed: {e}",
+    "appIsLatest": "You are on the latest version"
   },
   "detail": {
     "videoLink": "Video URL",

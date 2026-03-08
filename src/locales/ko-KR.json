@@ -122,7 +122,16 @@
     "alreadyLatest": "이미 최신 버전입니다",
     "updatedToLatest": "최신 버전으로 업데이트되었습니다",
     "updateFailed": "업데이트 실패: {e}",
-    "denoDownloadComplete": "Deno 다운로드가 완료되었습니다"
+    "denoDownloadComplete": "Deno 다운로드가 완료되었습니다",
+    "checkAppUpdate": "업데이트 확인",
+    "appNewVersionFound": "새 버전 발견",
+    "appUpdateNotes": "업데이트 내용",
+    "appUpdateNow": "지금 업데이트",
+    "appUpdateLater": "나중에",
+    "appUpdating": "업데이트 다운로드 중...",
+    "appUpdateSuccess": "업데이트 완료, 다시 시작합니다",
+    "appUpdateFailed": "업데이트 실패: {e}",
+    "appIsLatest": "최신 버전입니다"
   },
   "detail": {
     "videoLink": "동영상 링크",

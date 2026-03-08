@@ -122,7 +122,16 @@
     "alreadyLatest": "Установлена последняя версия",
     "updatedToLatest": "Обновлено до последней версии",
     "updateFailed": "Ошибка обновления: {e}",
-    "denoDownloadComplete": "Deno успешно загружен"
+    "denoDownloadComplete": "Deno успешно загружен",
+    "checkAppUpdate": "Проверить обновления",
+    "appNewVersionFound": "Обнаружена новая версия",
+    "appUpdateNotes": "Что нового",
+    "appUpdateNow": "Обновить сейчас",
+    "appUpdateLater": "Позже",
+    "appUpdating": "Загрузка обновления...",
+    "appUpdateSuccess": "Обновление завершено, перезапуск",
+    "appUpdateFailed": "Ошибка обновления: {e}",
+    "appIsLatest": "У вас последняя версия"
   },
   "detail": {
     "videoLink": "Ссылка на видео",

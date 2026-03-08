@@ -19,6 +19,7 @@ declare module 'vue' {
     ExtraOptionsCard: typeof import('./src/components/home/ExtraOptionsCard.vue')['default']
     IconMdiAccount: typeof import('~icons/mdi/account')['default']
     IconMdiArrowLeft: typeof import('~icons/mdi/arrow-left')['default']
+    IconMdiArrowRight: typeof import('~icons/mdi/arrow-right')['default']
     IconMdiCheckCircleOutline: typeof import('~icons/mdi/check-circle-outline')['default']
     IconMdiChevronRight: typeof import('~icons/mdi/chevron-right')['default']
     IconMdiChevronUp: typeof import('~icons/mdi/chevron-up')['default']
@@ -93,6 +94,7 @@ declare module 'vue' {
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     SubtitleCard: typeof import('./src/components/home/SubtitleCard.vue')['default']
+    UpdateModal: typeof import('./src/components/UpdateModal.vue')['default']
     VideoInfoCard: typeof import('./src/components/home/VideoInfoCard.vue')['default']
   }
 }
