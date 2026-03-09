@@ -21,7 +21,8 @@
   "clipboard": {
     "empty": "剪貼簿為空",
     "invalidUrl": "剪貼簿內容不是有效的連結",
-    "readFailed": "無法讀取剪貼簿"
+    "readFailed": "無法讀取剪貼簿",
+    "pasteSuccess": "已從剪貼簿貼上"
   },
   "tray": {
     "show": "顯示視窗",
@@ -40,7 +41,7 @@
     "parse": "解析",
     "pasteFromClipboard": "從剪貼簿貼上",
     "parseHistory": "解析歷史",
-    "historyRecords": "歷史解析記錄",
+    "noHistory": "暫無解析記錄",
     "enterValidUrl": "請輸入有效的網址",
     "tips": [
       "遇到下載問題？請前往設定中填寫 Cookie 或更新 yt-dlp 版本",
@@ -201,6 +202,8 @@
     "none": "不使用",
     "manual": "手動輸入",
     "file": "Cookie 檔案",
+    "browser": "從瀏覽器取得",
+    "browserDesc": "自動從選定瀏覽器讀取 Cookie，需要關閉對應瀏覽器後使用",
     "textPlaceholder": "貼上 Netscape 格式的 Cookie 內容...",
     "noFileSelected": "未選擇檔案",
     "cookieFiles": "Cookie 檔案",
@@ -276,6 +279,16 @@
     "saveChatData": "儲存彈幕資料",
     "chatDataSaved": "彈幕資料已儲存"
   },
+  "plugins": {
+    "title": "外掛管理",
+    "desc": "管理 yt-dlp 外掛，擴充功能",
+    "pageDesc": "安裝 yt-dlp 外掛以擴充功能。外掛安裝後將自動生效。",
+    "install": "安裝",
+    "uninstall": "解除安裝",
+    "installSuccess": "外掛安裝成功",
+    "uninstallSuccess": "外掛已解除安裝",
+    "cookieUnlockDesc": "解鎖 Chromium 系瀏覽器的 Cookie 資料庫，無需關閉瀏覽器即可讀取 Cookie"
+  },
   "errors": {
     "unsupportedUrl": "該平台暫不支援，請檢查連結是否正確",
     "invalidUrl": "無效的連結位址",
@@ -285,6 +298,7 @@
     "http404": "資源不存在 (404)，請檢查連結是否正確",
     "http429": "請求過於頻繁 (429)，請稍後再試",
     "noFormats": "未找到可用的影片格式",
+    "cookieDatabaseLocked": "無法讀取瀏覽器 Cookie 資料庫，請先關閉對應瀏覽器後重試",
     "cannotDownload": "無法存取頁面，請檢查網路連線或代理設定",
     "networkError": "網路連線失敗，請檢查網路或代理設定",
     "err_ytdlp_not_installed": "yt-dlp 未安裝，請先在設定中下載",
@@ -331,7 +345,10 @@
     "err_create_thread_snapshot": "建立執行緒快照失敗",
     "err_suspend_process": "暫停處理程序失敗",
     "err_resume_process": "恢復處理程序失敗",
-    "err_kill_process": "終止處理程序失敗"
+    "err_kill_process": "終止處理程序失敗",
+    "dialogTitle": "發生錯誤",
+    "dialogOk": "確定",
+    "showDetail": "查看詳情"
   },
   "setup": {
     "ytdlpTitle": "需要安裝 yt-dlp",

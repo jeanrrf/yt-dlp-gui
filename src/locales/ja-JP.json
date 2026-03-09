@@ -21,7 +21,8 @@
   "clipboard": {
     "empty": "クリップボードは空です",
     "invalidUrl": "クリップボードの内容は有効なURLではありません",
-    "readFailed": "クリップボードを読み取れません"
+    "readFailed": "クリップボードを読み取れません",
+    "pasteSuccess": "クリップボードから貼り付けました"
   },
   "tray": {
     "show": "ウィンドウを表示",
@@ -40,7 +41,7 @@
     "parse": "解析",
     "pasteFromClipboard": "クリップボードから貼り付け",
     "parseHistory": "解析履歴",
-    "historyRecords": "過去の解析記録",
+    "noHistory": "解析履歴はありません",
     "enterValidUrl": "有効なURLを入力してください",
     "tips": [
       "ダウンロードに問題がある場合は、設定からCookieの設定やyt-dlpの更新をお試しください",
@@ -201,6 +202,8 @@
     "none": "使用しない",
     "manual": "手動入力",
     "file": "Cookieファイル",
+    "browser": "ブラウザから取得",
+    "browserDesc": "選択したブラウザからCookieを自動的に読み取ります。使用前にブラウザを閉じてください",
     "textPlaceholder": "Netscape形式のCookie内容を貼り付け...",
     "noFileSelected": "ファイル未選択",
     "cookieFiles": "Cookieファイル",
@@ -276,6 +279,16 @@
     "saveChatData": "チャットデータを保存",
     "chatDataSaved": "チャットデータを保存しました"
   },
+  "plugins": {
+    "title": "プラグイン管理",
+    "desc": "yt-dlp プラグインを管理して機能を拡張",
+    "pageDesc": "yt-dlp プラグインをインストールして機能を拡張します。インストール後、自動的に有効になります。",
+    "install": "インストール",
+    "uninstall": "アンインストール",
+    "installSuccess": "プラグインのインストールが完了しました",
+    "uninstallSuccess": "プラグインをアンインストールしました",
+    "cookieUnlockDesc": "Chromium系ブラウザのCookieデータベースをアンロックし、ブラウザを閉じずにCookieを読み取れます"
+  },
   "errors": {
     "unsupportedUrl": "このサイトは現在サポートされていません。URLをご確認ください",
     "invalidUrl": "無効なURLです",
@@ -285,6 +298,7 @@
     "http404": "リソースが見つかりません (404)。URLをご確認ください",
     "http429": "リクエストが多すぎます (429)。しばらくしてから再試行してください",
     "noFormats": "利用可能な動画フォーマットが見つかりません",
+    "cookieDatabaseLocked": "ブラウザのCookieデータベースを読み取れません。ブラウザを閉じてから再試行してください",
     "cannotDownload": "ページにアクセスできません。ネットワークやプロキシの設定をご確認ください",
     "networkError": "ネットワーク接続に失敗しました。ネットワークやプロキシの設定をご確認ください",
     "err_ytdlp_not_installed": "yt-dlpがインストールされていません。設定からダウンロードしてください",
@@ -331,7 +345,10 @@
     "err_create_thread_snapshot": "スレッドスナップショットの作成に失敗しました",
     "err_suspend_process": "プロセスの一時停止に失敗しました",
     "err_resume_process": "プロセスの再開に失敗しました",
-    "err_kill_process": "プロセスの終了に失敗しました"
+    "err_kill_process": "プロセスの終了に失敗しました",
+    "dialogTitle": "エラー",
+    "dialogOk": "OK",
+    "showDetail": "詳細を表示"
   },
   "setup": {
     "ytdlpTitle": "yt-dlp のインストールが必要です",

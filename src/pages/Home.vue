@@ -65,9 +65,26 @@ const handlePaste = async () => {
     }
     url.value = trimmed;
     historyIndex.value = -1;
+    window.$message.success(t("clipboard.pasteSuccess"));
   } catch {
     window.$message.warning(t("clipboard.readFailed"));
   }
+};
+
+/** 格式化历史记录时间 */
+const formatHistoryTime = (time: number): string => {
+  if (!time) return "";
+  const now = new Date();
+  const d = new Date(time);
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const target = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const diff = (today.getTime() - target.getTime()) / 86400000;
+  const timeStr = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+
+  if (diff === 0) return `${t("downloads.today")} ${timeStr}`;
+  if (diff === 1) return `${t("downloads.yesterday")} ${timeStr}`;
+  if (diff === 2) return `${t("downloads.dayBeforeYesterday")} ${timeStr}`;
+  return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")} ${timeStr}`;
 };
 
 const currentTipIndex = ref(0);
@@ -94,7 +111,7 @@ const handleSearch = async () => {
   }
   const success = await videoStore.fetchVideoInfo(trimmed);
   if (success) {
-    historyStore.add(trimmed);
+    historyStore.add(trimmed, videoStore.videoInfo?.title);
     router.push({ name: "detail" });
   }
 };
@@ -148,69 +165,19 @@ const handleSearch = async () => {
           </template>
           {{ $t('home.pasteFromClipboard') }}
         </n-button>
-        <n-popover
-          v-model:show="showHistory"
-          trigger="click"
-          placement="bottom"
-          :width="400"
-          :disabled="historyStore.urls.length === 0"
+        <n-button
+          size="small"
+          strong
+          secondary
+          round
+          :disabled="historyStore.items.length === 0"
+          @click="showHistory = true"
         >
-          <template #trigger>
-            <n-button
-              size="small"
-              strong
-              secondary
-              round
-              :disabled="historyStore.urls.length === 0"
-            >
-              <template #icon>
-                <n-icon size="14"><icon-mdi-history /></n-icon>
-              </template>
-              {{ $t('home.parseHistory') }}
-            </n-button>
+          <template #icon>
+            <n-icon size="14"><icon-mdi-history /></n-icon>
           </template>
-          <div class="history-popover">
-            <n-flex
-              align="center"
-              justify="space-between"
-              style="margin-bottom: 6px"
-            >
-              <n-text strong style="font-size: 13px">{{ $t('home.historyRecords') }}</n-text>
-              <n-button
-                size="tiny"
-                strong
-                secondary
-                type="error"
-                @click="
-                  historyStore.clear();
-                  showHistory = false;
-                "
-              >
-                {{ $t('common.clear') }}
-              </n-button>
-            </n-flex>
-            <n-scrollbar style="max-height: 260px">
-              <n-flex vertical :size="2">
-                <n-button
-                  v-for="(item, index) in historyStore.urls"
-                  :key="index"
-                  quaternary
-                  size="small"
-                  style="justify-content: flex-start; width: 100%"
-                  @click="selectHistory(item)"
-                >
-                  <n-ellipsis
-                    :line-clamp="1"
-                    :tooltip="false"
-                    style="font-size: 13px"
-                  >
-                    {{ item }}
-                  </n-ellipsis>
-                </n-button>
-              </n-flex>
-            </n-scrollbar>
-          </div>
-        </n-popover>
+          {{ $t('home.parseHistory') }}
+        </n-button>
       </n-flex>
       <div class="tips-container">
         <Transition name="tip-fade" mode="out-in">
@@ -220,6 +187,69 @@ const handleSearch = async () => {
         </Transition>
       </div>
     </n-flex>
+
+    <n-drawer v-model:show="showHistory" :width="360" placement="right">
+      <n-drawer-content :native-scrollbar="false">
+        <template #header>
+          <n-flex align="center" justify="space-between" style="width: 100%">
+            <span>{{ $t('home.parseHistory') }}</span>
+            <n-button
+              size="tiny"
+              strong
+              secondary
+              type="error"
+              :disabled="historyStore.items.length === 0"
+              @click="historyStore.clear()"
+            >
+              {{ $t('common.clear') }}
+            </n-button>
+          </n-flex>
+        </template>
+        <n-empty
+          v-if="historyStore.items.length === 0"
+          :description="$t('home.noHistory')"
+          style="margin-top: 80px"
+        />
+        <n-list v-else bordered clickable>
+          <n-list-item
+            v-for="(item, index) in historyStore.items"
+            :key="index"
+            @click="selectHistory(item.url)"
+          >
+            <n-flex vertical :size="2" style="min-width: 0">
+              <n-flex :size="4" :wrap="false" align="center" style="min-width: 0">
+                <n-ellipsis :line-clamp="1" :tooltip="false" class="history-title">
+                  {{ item.title || item.url }}
+                </n-ellipsis>
+              </n-flex>
+              <n-flex :size="8" :wrap="false" align="center">
+                <n-text depth="3" class="history-url">
+                  <n-ellipsis :line-clamp="1" :tooltip="false">
+                    {{ item.url }}
+                  </n-ellipsis>
+                </n-text>
+                <n-text depth="3" class="history-time">
+                  {{ formatHistoryTime(item.time) }}
+                </n-text>
+              </n-flex>
+            </n-flex>
+            <template #suffix>
+              <n-button
+                quaternary
+                circle
+                size="tiny"
+                class="history-delete"
+                @click.stop="historyStore.remove(item.url)"
+              >
+                <template #icon>
+                  <n-icon size="14"><icon-mdi-close /></n-icon>
+                </template>
+              </n-button>
+            </template>
+          </n-list-item>
+        </n-list>
+      </n-drawer-content>
+    </n-drawer>
   </div>
 </template>
 
@@ -265,5 +295,34 @@ const handleSearch = async () => {
     font-size: 12px;
     display: inline-block;
   }
+}
+
+.history-title {
+  font-size: 13px;
+  font-weight: 500;
+  flex: 1;
+  min-width: 0;
+}
+
+.history-url {
+  font-size: 11px;
+  flex: 1;
+  min-width: 0;
+}
+
+.history-time {
+  font-size: 11px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.history-delete {
+  opacity: 0;
+  flex-shrink: 0;
+  transition: opacity 0.15s;
+}
+
+:deep(.n-list-item):hover .history-delete {
+  opacity: 1;
 }
 </style>

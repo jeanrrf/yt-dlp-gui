@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { invoke } from "@tauri-apps/api/core";
 import { save } from "@tauri-apps/plugin-dialog";
-import { formatError } from "@/utils/format";
+import { showErrorDialog } from "@/utils/format";
 import { isValidUrl } from "@/utils/validate";
 import { useSettingStore } from "@/stores/setting";
 import { useStatusStore } from "@/stores/status";
@@ -119,10 +119,11 @@ const handleFetch = async () => {
   checkedKeys.value = [];
   filterText.value = "";
   try {
-    const cookieFile = await videoStore.getCookieFile();
+    const { cookieFile, cookieBrowser } = await videoStore.getCookieArgs();
     const result = await invoke<LiveChatMessage[]>("tool_fetch_live_chat", {
       url: toolUrl.value.trim(),
       cookieFile,
+      cookieBrowser,
       proxy: settingStore.proxy || null,
     });
     messages.value = result;
@@ -133,7 +134,7 @@ const handleFetch = async () => {
     } else if (/sign in|cookies/i.test(msg)) {
       statusStore.showCookieModal = true;
     } else {
-      window.$message.error(formatError(msg));
+      showErrorDialog(msg);
     }
   } finally {
     loading.value = false;

@@ -52,6 +52,7 @@ export interface DownloadTaskParams {
   videoFormat: string | null;
   audioFormat: string | null;
   cookieFile: string | null;
+  cookieBrowser: string | null;
   proxy: string | null;
   outputTemplate: string | null;
   concurrentFragments: number | null;

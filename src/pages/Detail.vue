@@ -116,7 +116,7 @@ const handleDownload = async () => {
   }
 
   const taskId = `dl_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-  const cookieFile = await videoStore.getCookieFile();
+  const { cookieFile, cookieBrowser } = await videoStore.getCookieArgs();
 
   const buildFormatLabel = (): string => {
     const parts: string[] = [];
@@ -151,6 +151,7 @@ const handleDownload = async () => {
     videoFormat: selectedVideoFormat.value || null,
     audioFormat: selectedAudioFormat.value || null,
     cookieFile,
+    cookieBrowser,
     proxy: settingStore.proxy || null,
     outputTemplate: settingStore.outputTemplate || null,
     concurrentFragments: settingStore.concurrentFragments || null,
@@ -214,7 +215,7 @@ const handleDownload = async () => {
 
 <template>
   <div v-if="videoStore.videoInfo" class="detail-page">
-    <n-flex :size="8" align="center" style="margin-bottom: 16px">
+    <n-flex :size="8" align="center" :wrap="false" style="margin-bottom: 16px">
       <n-button size="small" strong secondary round @click="handleBack">
         <template #icon>
           <n-icon>
@@ -229,6 +230,7 @@ const handleDownload = async () => {
         size="small"
         round
         readonly
+        style="flex: 1; min-width: 0"
       />
       <n-button
         size="small"

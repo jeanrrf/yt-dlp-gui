@@ -27,6 +27,7 @@ pub async fn fetch_video_info(
     app: AppHandle,
     url: String,
     cookie_file: Option<String>,
+    cookie_browser: Option<String>,
     proxy: Option<String>,
 ) -> Result<Value, String> {
     let ytdlp_path = utils::get_ytdlp_path(&app)?;
@@ -41,11 +42,18 @@ pub async fn fetch_video_info(
         "never".to_string(),
     ];
     args.extend(utils::build_js_runtime_args(&app));
+    args.extend(utils::build_plugin_args(&app));
 
     if let Some(ref cf) = cookie_file {
         if !cf.is_empty() {
             args.push("--cookies".to_string());
             args.push(cf.clone());
+        }
+    }
+    if let Some(ref browser) = cookie_browser {
+        if !browser.is_empty() {
+            args.push("--cookies-from-browser".to_string());
+            args.push(browser.clone());
         }
     }
 

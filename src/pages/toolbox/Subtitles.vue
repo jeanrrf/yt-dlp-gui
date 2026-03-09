@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { invoke } from "@tauri-apps/api/core";
 import { save } from "@tauri-apps/plugin-dialog";
-import { formatError } from "@/utils/format";
+import { showErrorDialog } from "@/utils/format";
 import { isValidUrl } from "@/utils/validate";
 import { mergeBilingualSrt, mergeBilingualVtt } from "@/utils/subtitle";
 import { useSettingStore } from "@/stores/setting";
@@ -80,10 +80,11 @@ const handleFetch = async () => {
   primaryLang.value = null;
   secondaryLang.value = null;
   try {
-    const cookieFile = await videoStore.getCookieFile();
+    const { cookieFile, cookieBrowser } = await videoStore.getCookieArgs();
     const info = await invoke<SubtitleInfo>("tool_fetch_subtitles", {
       url: toolUrl.value.trim(),
       cookieFile,
+      cookieBrowser,
       proxy: settingStore.proxy || null,
     });
     videoTitle.value = info.title || "";
@@ -122,7 +123,7 @@ const handleFetch = async () => {
     } else if (/sign in|cookies/i.test(msg)) {
       statusStore.showCookieModal = true;
     } else {
-      window.$message.error(formatError(msg));
+      showErrorDialog(msg);
     }
   } finally {
     loading.value = false;

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
+import { readText } from "@tauri-apps/plugin-clipboard-manager";
 import { useSettingStore } from "@/stores/setting";
 import { useI18n } from "vue-i18n";
 
@@ -11,7 +12,36 @@ const cookieModeOptions = computed(() => [
   { label: t("cookie.none"), value: "none" },
   { label: t("cookie.manual"), value: "text" },
   { label: t("cookie.file"), value: "file" },
+  { label: t("cookie.browser"), value: "browser" },
 ]);
+
+const browserOptions = [
+  { label: "Chrome", value: "chrome" },
+  { label: "Edge", value: "edge" },
+  { label: "Firefox", value: "firefox" },
+  { label: "Brave", value: "brave" },
+  { label: "Opera", value: "opera" },
+  { label: "Vivaldi", value: "vivaldi" },
+  { label: "Chromium", value: "chromium" },
+  { label: "Safari", value: "safari" },
+  { label: "Whale", value: "whale" },
+];
+
+/** 从剪贴板粘贴 Cookie 文本 */
+const handlePasteCookie = async () => {
+  try {
+    const text = await readText();
+    const trimmed = text.trim();
+    if (!trimmed) {
+      window.$message.warning(t("clipboard.empty"));
+      return;
+    }
+    settingStore.cookieText = trimmed;
+    window.$message.success(t("clipboard.pasteSuccess"));
+  } catch {
+    window.$message.warning(t("clipboard.readFailed"));
+  }
+};
 
 /** 保存 Cookie 文本到应用数据目录 */
 const handleSaveCookieText = async () => {
@@ -70,7 +100,15 @@ const handleSelectFile = async () => {
           :autosize="{ minRows: 3, maxRows: 8 }"
           size="small"
         />
-        <n-flex justify="end">
+        <n-flex justify="end" :size="8">
+          <n-button size="small" @click="handlePasteCookie">
+            <template #icon>
+              <n-icon>
+                <icon-mdi-content-paste />
+              </n-icon>
+            </template>
+            {{ $t('home.pasteFromClipboard') }}
+          </n-button>
           <n-button
             size="small"
             :disabled="!settingStore.cookieText.trim()"
@@ -104,6 +142,17 @@ const handleSelectFile = async () => {
             {{ $t('common.select') }}
           </n-button>
         </n-flex>
+      </template>
+
+      <template v-if="settingStore.cookieMode === 'browser'">
+        <n-text depth="3" style="font-size: 12px">
+          {{ $t('cookie.browserDesc') }}
+        </n-text>
+        <n-select
+          v-model:value="settingStore.cookieBrowser"
+          :options="browserOptions"
+          size="small"
+        />
       </template>
     </n-flex>
   </n-card>

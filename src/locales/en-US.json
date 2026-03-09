@@ -21,7 +21,8 @@
   "clipboard": {
     "empty": "Clipboard is empty",
     "invalidUrl": "Clipboard content is not a valid URL",
-    "readFailed": "Cannot read clipboard"
+    "readFailed": "Cannot read clipboard",
+    "pasteSuccess": "Pasted from clipboard"
   },
   "tray": {
     "show": "Show Window",
@@ -40,7 +41,7 @@
     "parse": "Parse",
     "pasteFromClipboard": "Paste from Clipboard",
     "parseHistory": "History",
-    "historyRecords": "Parse History",
+    "noHistory": "No history yet",
     "enterValidUrl": "Please enter a valid URL",
     "tips": [
       "Having download issues? Go to Settings to configure cookies or update yt-dlp",
@@ -201,6 +202,8 @@
     "none": "None",
     "manual": "Manual Input",
     "file": "Cookie File",
+    "browser": "From Browser",
+    "browserDesc": "Automatically read cookies from selected browser. Close the browser before use",
     "textPlaceholder": "Paste Netscape format cookie content...",
     "noFileSelected": "No file selected",
     "cookieFiles": "Cookie Files",
@@ -276,6 +279,16 @@
     "saveChatData": "Save Chat Data",
     "chatDataSaved": "Chat data saved"
   },
+  "plugins": {
+    "title": "Plugin Manager",
+    "desc": "Manage yt-dlp plugins to extend functionality",
+    "pageDesc": "Install yt-dlp plugins to extend functionality. Plugins take effect automatically after installation.",
+    "install": "Install",
+    "uninstall": "Uninstall",
+    "installSuccess": "Plugin installed successfully",
+    "uninstallSuccess": "Plugin uninstalled",
+    "cookieUnlockDesc": "Unlock Chromium browser cookie database, allowing cookie access without closing the browser"
+  },
   "errors": {
     "unsupportedUrl": "This platform is not supported. Please check the URL",
     "invalidUrl": "Invalid URL",
@@ -285,6 +298,7 @@
     "http404": "Resource not found (404). Please check the URL",
     "http429": "Too many requests (429). Please try again later",
     "noFormats": "No available video formats found",
+    "cookieDatabaseLocked": "Cannot read browser cookie database. Please close the browser and try again",
     "cannotDownload": "Cannot access page. Please check network or proxy settings",
     "networkError": "Network connection failed. Please check network or proxy settings",
     "err_ytdlp_not_installed": "yt-dlp is not installed. Please download it in Settings",
@@ -331,7 +345,10 @@
     "err_create_thread_snapshot": "Failed to create thread snapshot",
     "err_suspend_process": "Failed to suspend process",
     "err_resume_process": "Failed to resume process",
-    "err_kill_process": "Failed to kill process"
+    "err_kill_process": "Failed to kill process",
+    "dialogTitle": "Error",
+    "dialogOk": "OK",
+    "showDetail": "Show details"
   },
   "setup": {
     "ytdlpTitle": "yt-dlp Required",

@@ -16,13 +16,16 @@ export const useSettingStore = defineStore("setting", () => {
   const downloadDir = ref("");
 
   /** Cookie 模式 */
-  const cookieMode = ref<"none" | "text" | "file">("none");
+  const cookieMode = ref<"none" | "text" | "file" | "browser">("none");
 
   /** Cookie 文本内容（Netscape 格式） */
   const cookieText = ref("");
 
   /** Cookie 文件路径 */
   const cookieFile = ref("");
+
+  /** 从浏览器读取 Cookie 的浏览器名称 */
+  const cookieBrowser = ref("chrome");
 
   /** 代理地址 */
   const proxy = ref("");
@@ -52,6 +55,7 @@ export const useSettingStore = defineStore("setting", () => {
     cookieMode,
     cookieText,
     cookieFile,
+    cookieBrowser,
     proxy,
     outputTemplate,
     concurrentFragments,

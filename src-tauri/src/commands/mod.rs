@@ -76,6 +76,8 @@ pub struct DownloadParams {
     pub video_format: Option<String>,
     pub audio_format: Option<String>,
     pub cookie_file: Option<String>,
+    /// 从浏览器读取 Cookie 的浏览器名称
+    pub cookie_browser: Option<String>,
     /// 代理地址
     pub proxy: Option<String>,
     /// 文件名模板

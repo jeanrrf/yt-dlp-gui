@@ -13,6 +13,7 @@ async fn run_ytdlp_tool(
     download_dir: &str,
     extra_args: Vec<String>,
     cookie_file: Option<&str>,
+    cookie_browser: Option<&str>,
     proxy: Option<&str>,
 ) -> Result<String, String> {
     let ytdlp_path = utils::get_ytdlp_path(app)?;
@@ -28,6 +29,7 @@ async fn run_ytdlp_tool(
         "--windows-filenames".to_string(),
     ];
     args.extend(utils::build_js_runtime_args(app));
+    args.extend(utils::build_plugin_args(app));
 
     let output_template = std::path::PathBuf::from(download_dir)
         .join("%(title).200s.%(ext)s")
@@ -42,6 +44,12 @@ async fn run_ytdlp_tool(
         if !cf.is_empty() {
             args.push("--cookies".to_string());
             args.push(cf.to_string());
+        }
+    }
+    if let Some(browser) = cookie_browser {
+        if !browser.is_empty() {
+            args.push("--cookies-from-browser".to_string());
+            args.push(browser.to_string());
         }
     }
     if let Some(p) = proxy {
@@ -87,6 +95,7 @@ pub async fn tool_fetch_thumbnails(
     app: AppHandle,
     url: String,
     cookie_file: Option<String>,
+    cookie_browser: Option<String>,
     proxy: Option<String>,
 ) -> Result<Value, String> {
     let ytdlp_path = utils::get_ytdlp_path(&app)?;
@@ -103,11 +112,18 @@ pub async fn tool_fetch_thumbnails(
         "--no-playlist".to_string(),
     ];
     args.extend(utils::build_js_runtime_args(&app));
+    args.extend(utils::build_plugin_args(&app));
 
     if let Some(ref cf) = cookie_file {
         if !cf.is_empty() {
             args.push("--cookies".to_string());
             args.push(cf.clone());
+        }
+    }
+    if let Some(ref browser) = cookie_browser {
+        if !browser.is_empty() {
+            args.push("--cookies-from-browser".to_string());
+            args.push(browser.clone());
         }
     }
     if let Some(ref p) = proxy {
@@ -205,6 +221,7 @@ pub async fn tool_download_thumbnail(
     url: String,
     download_dir: String,
     cookie_file: Option<String>,
+    cookie_browser: Option<String>,
     proxy: Option<String>,
 ) -> Result<String, String> {
     run_ytdlp_tool(
@@ -217,6 +234,7 @@ pub async fn tool_download_thumbnail(
             "jpg".to_string(),
         ],
         cookie_file.as_deref(),
+        cookie_browser.as_deref(),
         proxy.as_deref(),
     )
     .await
@@ -228,6 +246,7 @@ pub async fn tool_fetch_subtitles(
     app: AppHandle,
     url: String,
     cookie_file: Option<String>,
+    cookie_browser: Option<String>,
     proxy: Option<String>,
 ) -> Result<Value, String> {
     let ytdlp_path = utils::get_ytdlp_path(&app)?;
@@ -244,11 +263,18 @@ pub async fn tool_fetch_subtitles(
         "--no-playlist".to_string(),
     ];
     args.extend(utils::build_js_runtime_args(&app));
+    args.extend(utils::build_plugin_args(&app));
 
     if let Some(ref cf) = cookie_file {
         if !cf.is_empty() {
             args.push("--cookies".to_string());
             args.push(cf.clone());
+        }
+    }
+    if let Some(ref browser) = cookie_browser {
+        if !browser.is_empty() {
+            args.push("--cookies-from-browser".to_string());
+            args.push(browser.clone());
         }
     }
     if let Some(ref p) = proxy {
@@ -403,6 +429,7 @@ pub async fn tool_download_subtitles(
     sub_langs: String,
     write_auto_subs: bool,
     cookie_file: Option<String>,
+    cookie_browser: Option<String>,
     proxy: Option<String>,
 ) -> Result<String, String> {
     let mut extra = vec![
@@ -419,6 +446,7 @@ pub async fn tool_download_subtitles(
         &download_dir,
         extra,
         cookie_file.as_deref(),
+        cookie_browser.as_deref(),
         proxy.as_deref(),
     )
     .await
@@ -535,6 +563,7 @@ pub async fn tool_fetch_live_chat(
     app: AppHandle,
     url: String,
     cookie_file: Option<String>,
+    cookie_browser: Option<String>,
     proxy: Option<String>,
 ) -> Result<Vec<LiveChatMessage>, String> {
     let ytdlp_path = utils::get_ytdlp_path(&app)?;
@@ -569,11 +598,18 @@ pub async fn tool_fetch_live_chat(
         output_template,
     ];
     args.extend(utils::build_js_runtime_args(&app));
+    args.extend(utils::build_plugin_args(&app));
 
     if let Some(ref cf) = cookie_file {
         if !cf.is_empty() {
             args.push("--cookies".to_string());
             args.push(cf.clone());
+        }
+    }
+    if let Some(ref browser) = cookie_browser {
+        if !browser.is_empty() {
+            args.push("--cookies-from-browser".to_string());
+            args.push(browser.clone());
         }
     }
     if let Some(ref p) = proxy {

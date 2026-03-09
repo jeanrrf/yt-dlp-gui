@@ -20,6 +20,7 @@ const handlePaste = async () => {
       return;
     }
     toolUrl.value = trimmed;
+    window.$message.success(t("clipboard.pasteSuccess"));
   } catch {
     window.$message.warning(t("clipboard.readFailed"));
   }

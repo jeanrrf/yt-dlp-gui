@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 import { invoke } from "@tauri-apps/api/core";
-import { formatError } from "@/utils/format";
+import { showErrorDialog } from "@/utils/format";
 import { useSettingStore } from "@/stores/setting";
 import { useStatusStore } from "@/stores/status";
 import type { VideoInfo, VideoFormat, PlaylistEntry, DenoStatus } from "@/types";
@@ -17,17 +17,21 @@ export const useVideoStore = defineStore("video", () => {
   const playlistEntries = ref<PlaylistEntry[]>([]);
   const selectedPlaylistItems = ref<number[]>([]);
 
-  /** 获取当前有效的 Cookie 文件路径 */
-  const getCookieFile = async (): Promise<string | null> => {
+  /** 获取当前有效的 Cookie 参数 */
+  const getCookieArgs = async (): Promise<{ cookieFile: string | null; cookieBrowser: string | null }> => {
     const settingStore = useSettingStore();
-    const { cookieMode, cookieText, cookieFile } = settingStore;
+    const { cookieMode, cookieText, cookieFile, cookieBrowser } = settingStore;
     if (cookieMode === "text" && cookieText.trim()) {
-      return await invoke<string>("save_cookie_text", { text: cookieText });
+      const path = await invoke<string>("save_cookie_text", { text: cookieText });
+      return { cookieFile: path, cookieBrowser: null };
     }
     if (cookieMode === "file" && cookieFile) {
-      return cookieFile;
+      return { cookieFile, cookieBrowser: null };
     }
-    return null;
+    if (cookieMode === "browser" && cookieBrowser) {
+      return { cookieFile: null, cookieBrowser };
+    }
+    return { cookieFile: null, cookieBrowser: null };
   };
 
   /** 解析视频信息并填充 store，返回是否成功 */
@@ -35,10 +39,11 @@ export const useVideoStore = defineStore("video", () => {
     const settingStore = useSettingStore();
     fetching.value = true;
     try {
-      const cookieFile = await getCookieFile();
+      const { cookieFile, cookieBrowser } = await getCookieArgs();
       const info = await invoke<VideoInfo>("fetch_video_info", {
         url: targetUrl,
         cookieFile,
+        cookieBrowser,
         proxy: settingStore.proxy || null,
       });
 
@@ -100,11 +105,13 @@ export const useVideoStore = defineStore("video", () => {
       if (/err_ytdlp_not_installed/.test(raw)) {
         const statusStore = useStatusStore();
         statusStore.showYtdlpSetupModal = true;
+      } else if (/Could not copy.*cookie database/i.test(raw)) {
+        showErrorDialog(raw);
       } else if (/sign in|cookies/i.test(raw)) {
         const statusStore = useStatusStore();
         statusStore.showCookieModal = true;
       } else {
-        window.$message.error(formatError(raw));
+        showErrorDialog(raw);
       }
       return false;
     } finally {
@@ -132,7 +139,7 @@ export const useVideoStore = defineStore("video", () => {
     playlistEntries,
     selectedPlaylistItems,
     fetchVideoInfo,
-    getCookieFile,
+    getCookieArgs,
     clear,
   };
 });

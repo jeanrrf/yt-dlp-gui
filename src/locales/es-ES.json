@@ -21,7 +21,8 @@
   "clipboard": {
     "empty": "El portapapeles está vacío",
     "invalidUrl": "El contenido del portapapeles no es una URL válida",
-    "readFailed": "No se pudo leer el portapapeles"
+    "readFailed": "No se pudo leer el portapapeles",
+    "pasteSuccess": "Pegado del portapapeles"
   },
   "tray": {
     "show": "Mostrar ventana",
@@ -40,7 +41,7 @@
     "parse": "Analizar",
     "pasteFromClipboard": "Pegar del portapapeles",
     "parseHistory": "Historial",
-    "historyRecords": "Historial de análisis",
+    "noHistory": "Sin historial",
     "enterValidUrl": "Introduce una URL válida",
     "tips": [
       "¿Tienes problemas con la descarga? Ve a Ajustes para configurar las cookies o actualizar yt-dlp",
@@ -201,6 +202,8 @@
     "none": "No usar",
     "manual": "Entrada manual",
     "file": "Archivo de cookies",
+    "browser": "Desde el navegador",
+    "browserDesc": "Lee automáticamente las cookies del navegador seleccionado. Cierra el navegador antes de usar",
     "textPlaceholder": "Pega el contenido de cookies en formato Netscape...",
     "noFileSelected": "Ningún archivo seleccionado",
     "cookieFiles": "Archivos de cookies",
@@ -276,6 +279,16 @@
     "saveChatData": "Guardar datos del chat",
     "chatDataSaved": "Datos del chat guardados"
   },
+  "plugins": {
+    "title": "Gestión de plugins",
+    "desc": "Gestionar plugins de yt-dlp para ampliar funcionalidades",
+    "pageDesc": "Instala plugins de yt-dlp para ampliar funcionalidades. Los plugins se activan automáticamente tras la instalación.",
+    "install": "Instalar",
+    "uninstall": "Desinstalar",
+    "installSuccess": "Plugin instalado correctamente",
+    "uninstallSuccess": "Plugin desinstalado",
+    "cookieUnlockDesc": "Desbloquea la base de datos de cookies de navegadores Chromium, permitiendo leer cookies sin cerrar el navegador"
+  },
   "errors": {
     "unsupportedUrl": "Esta plataforma no es compatible. Verifica la URL",
     "invalidUrl": "URL no válida",
@@ -285,6 +298,7 @@
     "http404": "Recurso no encontrado (404). Verifica la URL",
     "http429": "Demasiadas solicitudes (429). Inténtalo de nuevo más tarde",
     "noFormats": "No se encontraron formatos de vídeo disponibles",
+    "cookieDatabaseLocked": "No se puede leer la base de datos de cookies del navegador. Cierra el navegador e inténtalo de nuevo",
     "cannotDownload": "No se puede acceder a la página. Verifica la conexión de red o la configuración del proxy",
     "networkError": "Error de conexión de red. Verifica la red o la configuración del proxy",
     "err_ytdlp_not_installed": "yt-dlp no está instalado. Descárgalo desde Ajustes",
@@ -331,7 +345,10 @@
     "err_create_thread_snapshot": "No se pudo crear la instantánea de hilo",
     "err_suspend_process": "No se pudo suspender el proceso",
     "err_resume_process": "No se pudo reanudar el proceso",
-    "err_kill_process": "No se pudo terminar el proceso"
+    "err_kill_process": "No se pudo terminar el proceso",
+    "dialogTitle": "Error",
+    "dialogOk": "Aceptar",
+    "showDetail": "Ver detalles"
   },
   "setup": {
     "ytdlpTitle": "Se requiere yt-dlp",

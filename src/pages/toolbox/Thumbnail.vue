@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { invoke } from "@tauri-apps/api/core";
 import { save } from "@tauri-apps/plugin-dialog";
-import { formatError } from "@/utils/format";
+import { showErrorDialog } from "@/utils/format";
 import { isValidUrl } from "@/utils/validate";
 import { useSettingStore } from "@/stores/setting";
 import { useStatusStore } from "@/stores/status";
@@ -47,10 +47,11 @@ const handleFetch = async () => {
   thumbnails.value = [];
   videoTitle.value = "";
   try {
-    const cookieFile = await videoStore.getCookieFile();
+    const { cookieFile, cookieBrowser } = await videoStore.getCookieArgs();
     const info = await invoke<VideoInfo>("tool_fetch_thumbnails", {
       url: toolUrl.value.trim(),
       cookieFile,
+      cookieBrowser,
       proxy: settingStore.proxy || null,
     });
     videoTitle.value = info.title || "";
@@ -79,7 +80,7 @@ const handleFetch = async () => {
     } else if (/sign in|cookies/i.test(msg)) {
       statusStore.showCookieModal = true;
     } else {
-      window.$message.error(formatError(msg));
+      showErrorDialog(msg);
     }
   } finally {
     loading.value = false;

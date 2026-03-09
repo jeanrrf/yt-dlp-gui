@@ -3,6 +3,7 @@ import type { Component } from "vue";
 import IconMdiImageOutline from "~icons/mdi/image-outline";
 import IconMdiSubtitlesOutline from "~icons/mdi/subtitles-outline";
 import IconMdiMessageTextOutline from "~icons/mdi/message-text-outline";
+import IconMdiPuzzleOutline from "~icons/mdi/puzzle-outline";
 import { useI18n } from "vue-i18n";
 
 useI18n();
@@ -43,6 +44,14 @@ const tools: ToolItem[] = [
     titleKey: "toolbox.livechatTitle",
     descKey: "toolbox.livechatDesc",
     tagKey: "toolbox.youtubeOnly",
+  },
+  {
+    key: "plugins",
+    icon: IconMdiPuzzleOutline,
+    color: "#8b5cf6",
+    bg: "rgba(139,92,246,0.1)",
+    titleKey: "plugins.title",
+    descKey: "plugins.desc",
   },
 ];
 

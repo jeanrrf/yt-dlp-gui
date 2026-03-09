@@ -233,6 +233,7 @@ fn build_download_args(app: &AppHandle, params: &DownloadParams) -> Result<Vec<S
 
     // JS 运行时（Deno）
     args.extend(utils::build_js_runtime_args(app));
+    args.extend(utils::build_plugin_args(app));
 
     // 格式选择
     match params.download_mode.as_str() {
@@ -313,6 +314,12 @@ fn build_download_args(app: &AppHandle, params: &DownloadParams) -> Result<Vec<S
         if !cf.is_empty() {
             args.push("--cookies".to_string());
             args.push(cf.clone());
+        }
+    }
+    if let Some(ref browser) = params.cookie_browser {
+        if !browser.is_empty() {
+            args.push("--cookies-from-browser".to_string());
+            args.push(browser.clone());
         }
     }
 

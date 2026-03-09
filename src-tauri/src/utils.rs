@@ -50,6 +50,28 @@ pub fn get_ytdlp_download_url() -> &'static str {
     }
 }
 
+/// 获取 yt-dlp 插件目录路径
+pub fn get_plugin_dir(app: &AppHandle) -> Result<PathBuf, String> {
+    let app_data = app
+        .path()
+        .app_data_dir()
+        .map_err(|e| format!("err_app_data_dir:{}", e))?;
+    Ok(app_data.join("yt-dlp-plugins"))
+}
+
+/// 如果插件目录存在，返回 --plugin-dirs 参数
+pub fn build_plugin_args(app: &AppHandle) -> Vec<String> {
+    if let Ok(plugin_dir) = get_plugin_dir(app) {
+        if plugin_dir.exists() {
+            return vec![
+                "--plugin-dirs".to_string(),
+                plugin_dir.to_string_lossy().to_string(),
+            ];
+        }
+    }
+    vec![]
+}
+
 /// 如果 Deno 已安装，返回 JS 运行时参数
 pub fn build_js_runtime_args(app: &AppHandle) -> Vec<String> {
     if let Ok(deno_path) = get_deno_path(app) {
