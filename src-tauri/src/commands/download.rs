@@ -367,6 +367,13 @@ fn build_download_args(app: &AppHandle, params: &DownloadParams) -> Result<Vec<S
             args.push(rate.clone());
         }
     }
+    // 自定义 FFmpeg 后处理参数
+    if let Some(ref ffmpeg_args) = params.ffmpeg_args {
+        if !ffmpeg_args.is_empty() {
+            args.push("--postprocessor-args".to_string());
+            args.push(ffmpeg_args.clone());
+        }
+    }
 
     // 字幕
     if !params.subtitles.is_empty() {

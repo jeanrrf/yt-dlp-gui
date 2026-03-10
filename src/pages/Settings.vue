@@ -350,6 +350,15 @@ onMounted(async () => {
       </div>
     </n-card>
 
+    <n-card :title="$t('settings.personalization')" size="small" class="section-card">
+      <div class="info-list">
+        <div class="info-row">
+          <span class="info-label">{{ $t("settings.showTaskbarProgress") }}</span>
+          <n-switch v-model:value="settingStore.showTaskbarProgress" />
+        </div>
+      </div>
+    </n-card>
+
     <CookieCard class="section-card" />
 
     <DownloadDirCard class="section-card" />

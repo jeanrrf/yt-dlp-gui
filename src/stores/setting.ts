@@ -51,6 +51,9 @@ export const useSettingStore = defineStore("setting", () => {
   /** 启动时自动检查更新 */
   const autoCheckUpdate = ref(true);
 
+  /** 在任务栏显示下载进度 */
+  const showTaskbarProgress = ref(true);
+
   return {
     locale,
     themeMode,
@@ -67,6 +70,7 @@ export const useSettingStore = defineStore("setting", () => {
     notifyMode,
     closeToTray,
     autoCheckUpdate,
+    showTaskbarProgress,
   };
 }, {
   persist: true,

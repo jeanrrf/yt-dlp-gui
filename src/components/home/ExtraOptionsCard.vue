@@ -33,6 +33,7 @@ const audioConvertFormat = defineModel<string>("audioConvertFormat", {
 const noMerge = defineModel<boolean>("noMerge", { required: true });
 const recodeFormat = defineModel<string>("recodeFormat", { required: true });
 const limitRate = defineModel<string>("limitRate", { required: true });
+const ffmpegArgs = defineModel<string>("ffmpegArgs", { required: true });
 
 const DEFAULT_TEMPLATE = "%(title).200s.%(ext)s";
 const outputTemplatePresets = computed(() => [
@@ -229,6 +230,17 @@ watch(endTime, (val) => {
             style="width: 110px"
           />
         </n-flex>
+      </n-flex>
+
+      <n-flex align="center" :size="8">
+        <span class="option-label">{{ $t('detail.ffmpegArgs') }}</span>
+        <n-input
+          v-model:value="ffmpegArgs"
+          :placeholder="$t('detail.ffmpegArgsPlaceholder')"
+          size="small"
+          clearable
+          style="flex: 1"
+        />
       </n-flex>
 
       <n-flex align="center" :size="8">

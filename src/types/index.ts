@@ -43,6 +43,7 @@ export interface ExtraOptions {
   noMerge: boolean;
   recodeFormat: string;
   limitRate: string;
+  ffmpegArgs: string;
 }
 
 export interface DownloadTaskParams {
@@ -67,6 +68,7 @@ export interface DownloadTaskParams {
   noMerge: boolean;
   recodeFormat: string | null;
   limitRate: string | null;
+  ffmpegArgs: string | null;
   subtitles: string[];
   startTime: number | null;
   endTime: number | null;

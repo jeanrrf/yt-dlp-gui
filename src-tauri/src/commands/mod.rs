@@ -100,6 +100,8 @@ pub struct DownloadParams {
     pub no_merge: bool,
     pub recode_format: Option<String>,
     pub limit_rate: Option<String>,
+    /// 自定义 FFmpeg 后处理参数（--postprocessor-args）
+    pub ffmpeg_args: Option<String>,
     pub subtitles: Vec<String>,
     pub start_time: Option<f64>,
     pub end_time: Option<f64>,

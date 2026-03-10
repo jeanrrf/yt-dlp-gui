@@ -63,6 +63,7 @@ const audioConvertFormat = ref("");
 const noMerge = ref(false);
 const recodeFormat = ref("");
 const limitRate = ref("");
+const ffmpegArgs = ref("");
 const selectedSubtitles = ref<string[]>([]);
 
 const dirCardRef = ref<HTMLElement | null>(null);
@@ -166,6 +167,7 @@ const handleDownload = async () => {
     noMerge: noMerge.value,
     recodeFormat: recodeFormat.value || null,
     limitRate: limitRate.value || null,
+    ffmpegArgs: ffmpegArgs.value || null,
     subtitles: selectedSubtitles.value,
     startTime: startTime.value != null ? timeToSeconds(startTime.value) : null,
     endTime: endTime.value != null ? timeToSeconds(endTime.value) : null,
@@ -315,6 +317,7 @@ const handleDownload = async () => {
       v-model:no-merge="noMerge"
       v-model:recode-format="recodeFormat"
       v-model:limit-rate="limitRate"
+      v-model:ffmpeg-args="ffmpegArgs"
       class="section-card"
     />
 

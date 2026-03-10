@@ -1,6 +1,7 @@
 import { defineStore } from "pinia";
 import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
+import { getCurrentWindow, ProgressBarStatus } from "@tauri-apps/api/window";
 import {
   isPermissionGranted,
   requestPermission,
@@ -138,6 +139,34 @@ export const useDownloadStore = defineStore("download", () => {
 
   watch(tasks, saveTasks, { deep: true });
 
+  /** 更新任务栏进度条 */
+  const updateTaskbarProgress = () => {
+    const settingStore = useSettingStore();
+    const appWindow = getCurrentWindow();
+
+    if (!settingStore.showTaskbarProgress) {
+      appWindow.setProgressBar({ status: ProgressBarStatus.None });
+      return;
+    }
+
+    const downloading = tasks.value.filter((t) => t.status === "downloading");
+    const paused = tasks.value.filter((t) => t.status === "paused");
+
+    if (downloading.length > 0) {
+      const avg = Math.round(
+        downloading.reduce((sum, t) => sum + (t.percent || 0), 0) / downloading.length,
+      );
+      appWindow.setProgressBar({ status: ProgressBarStatus.Normal, progress: avg });
+    } else if (paused.length > 0) {
+      const avg = Math.round(
+        paused.reduce((sum, t) => sum + (t.percent || 0), 0) / paused.length,
+      );
+      appWindow.setProgressBar({ status: ProgressBarStatus.Paused, progress: avg });
+    } else {
+      appWindow.setProgressBar({ status: ProgressBarStatus.None });
+    }
+  };
+
   /** 注册 Tauri 后端事件监听，仅初始化一次 */
   const setupListeners = async () => {
     if (listenersSetup) return;
@@ -152,6 +181,7 @@ export const useDownloadStore = defineStore("download", () => {
         if (event.payload.downloaded) task.downloaded = event.payload.downloaded;
         if (event.payload.total) task.total = event.payload.total;
       }
+      updateTaskbarProgress();
     });
 
     await listen<{ id: string; line: string }>("download-log", (event) => {
@@ -170,6 +200,7 @@ export const useDownloadStore = defineStore("download", () => {
         if (event.payload.outputFile) task.outputFile = event.payload.outputFile;
         notify(i18n.global.t("downloads.notifyComplete"), task.title || i18n.global.t("downloads.notifyCompleteBody"));
       }
+      updateTaskbarProgress();
       tryStartNext();
     });
 
@@ -180,6 +211,7 @@ export const useDownloadStore = defineStore("download", () => {
         task.error = event.payload.error;
         task.speed = "";
       }
+      updateTaskbarProgress();
       tryStartNext();
     });
   };
@@ -200,6 +232,7 @@ export const useDownloadStore = defineStore("download", () => {
       task.status = "paused";
       task.speed = "";
     }
+    updateTaskbarProgress();
   };
 
   /** 恢复指定已暂停的下载任务 */
@@ -209,6 +242,7 @@ export const useDownloadStore = defineStore("download", () => {
     if (task) {
       task.status = "downloading";
     }
+    updateTaskbarProgress();
   };
 
   /** 取消下载任务并删除已下载的文件 */
@@ -227,6 +261,7 @@ export const useDownloadStore = defineStore("download", () => {
       }
     }
 
+    updateTaskbarProgress();
     tryStartNext();
   };
 
