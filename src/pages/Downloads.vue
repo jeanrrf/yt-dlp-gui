@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { NCheckbox, NFlex, NLog, type LogInst } from "naive-ui";
-import { revealItemInDir } from "@tauri-apps/plugin-opener";
+import { revealItemInDir, openUrl } from "@tauri-apps/plugin-opener";
 import { invoke } from "@tauri-apps/api/core";
 import { useDownloadStore } from "@/stores/download";
 import { useI18n } from "vue-i18n";
@@ -184,22 +184,24 @@ const handleOpenFolder = async (task: DownloadTask) => {
   }
 };
 
-const handlePause = (id: string) => {
-  window.$dialog.warning({
-    title: t("downloads.pauseDownload"),
-    content: t("downloads.confirmPause"),
-    positiveText: t("common.pause"),
-    negativeText: t("common.cancel"),
-    onPositiveClick: async () => {
-      try {
-        await downloadStore.pauseTask(id);
-      } catch (e: unknown) {
-        window.$message.error(
-          e instanceof Error ? e.message : String(e) || t("downloads.pauseFailed"),
-        );
-      }
-    },
-  });
+const handleOpenSource = async (url: string) => {
+  try {
+    await openUrl(url);
+  } catch (e: unknown) {
+    window.$message.error(
+      e instanceof Error ? e.message : String(e),
+    );
+  }
+};
+
+const handlePause = async (id: string) => {
+  try {
+    await downloadStore.pauseTask(id);
+  } catch (e: unknown) {
+    window.$message.error(
+      e instanceof Error ? e.message : String(e) || t("downloads.pauseFailed"),
+    );
+  }
 };
 
 const handleResume = async (id: string) => {
@@ -378,6 +380,31 @@ const handleClearFinished = () => {
                       </n-text>
                     </n-flex>
                     <n-flex align="center" size="small">
+                      <n-button
+                        size="tiny"
+                        strong
+                        secondary
+                        @click="handleOpenSource(task.url)"
+                      >
+                        <template #icon>
+                          <n-icon size="16"><icon-mdi-open-in-new /></n-icon>
+                        </template>
+                      </n-button>
+                      <n-button
+                        size="tiny"
+                        strong
+                        secondary
+                        @click="toggleLog(task.id)"
+                      >
+                        <template #icon>
+                          <n-icon size="16">
+                            <icon-mdi-chevron-up
+                              v-if="expandedLogs.has(task.id)"
+                            /><icon-mdi-text-long v-else />
+                          </n-icon>
+                        </template>
+                      </n-button>
+                      <n-divider vertical style="margin: 0 2px" />
                       <template v-if="task.status === 'downloading'">
                         <n-button
                           size="tiny"
@@ -444,21 +471,6 @@ const handleClearFinished = () => {
                           </template>
                         </n-button>
                       </template>
-                      <n-divider vertical style="margin: 0 2px" />
-                      <n-button
-                        size="tiny"
-                        strong
-                        secondary
-                        @click="toggleLog(task.id)"
-                      >
-                        <template #icon>
-                          <n-icon size="16">
-                            <icon-mdi-chevron-up
-                              v-if="expandedLogs.has(task.id)"
-                            /><icon-mdi-text-long v-else />
-                          </n-icon>
-                        </template>
-                      </n-button>
                     </n-flex>
                   </n-flex>
                   <n-collapse-transition :show="expandedLogs.has(task.id)">
@@ -577,6 +589,31 @@ const handleClearFinished = () => {
                     </n-flex>
                     <n-flex align="center" size="small">
                       <n-button
+                        size="tiny"
+                        strong
+                        secondary
+                        @click="handleOpenSource(task.url)"
+                      >
+                        <template #icon>
+                          <n-icon size="16"><icon-mdi-open-in-new /></n-icon>
+                        </template>
+                      </n-button>
+                      <n-button
+                        size="tiny"
+                        strong
+                        secondary
+                        @click="toggleLog(task.id)"
+                      >
+                        <template #icon>
+                          <n-icon size="16">
+                            <icon-mdi-chevron-up
+                              v-if="expandedLogs.has(task.id)"
+                            /><icon-mdi-text-long v-else />
+                          </n-icon>
+                        </template>
+                      </n-button>
+                      <n-divider vertical style="margin: 0 2px" />
+                      <n-button
                         v-if="task.status === 'completed'"
                         size="tiny"
                         strong
@@ -602,20 +639,6 @@ const handleClearFinished = () => {
                       >
                         <template #icon>
                           <n-icon size="16"><icon-mdi-refresh /></n-icon>
-                        </template>
-                      </n-button>
-                      <n-button
-                        size="tiny"
-                        strong
-                        secondary
-                        @click="toggleLog(task.id)"
-                      >
-                        <template #icon>
-                          <n-icon size="16">
-                            <icon-mdi-chevron-up
-                              v-if="expandedLogs.has(task.id)"
-                            /><icon-mdi-text-long v-else />
-                          </n-icon>
                         </template>
                       </n-button>
                       <n-button

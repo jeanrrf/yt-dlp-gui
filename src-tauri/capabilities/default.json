@@ -10,6 +10,7 @@
     "core:window:allow-close",
     "core:window:allow-set-focus",
     "core:window:allow-unminimize",
+    "core:window:allow-set-progress-bar",
     "opener:default",
     "shell:allow-open",
     "shell:allow-execute",

@@ -89,9 +89,10 @@ export const useDownloadStore = defineStore("download", () => {
 
   /** 防抖保存任务列表到 IndexedDB */
   const saveTasks = () => {
+    if (!loaded.value) return;
     if (saveTimer) clearTimeout(saveTimer);
     saveTimer = setTimeout(() => {
-      storage.setItem(STORAGE_KEY, structuredClone(toRaw(tasks.value)));
+      storage.setItem(STORAGE_KEY, JSON.parse(JSON.stringify(tasks.value)));
     }, 500);
   };
 

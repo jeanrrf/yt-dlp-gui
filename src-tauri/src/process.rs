@@ -18,13 +18,30 @@ mod win32 {
         pub dw_flags: u32,
     }
 
+    #[repr(C)]
+    pub struct PROCESSENTRY32W {
+        pub dw_size: u32,
+        pub cnt_usage: u32,
+        pub th32_process_id: u32,
+        pub th32_default_heap_id: usize,
+        pub th32_module_id: u32,
+        pub cnt_threads: u32,
+        pub th32_parent_process_id: u32,
+        pub pc_pri_class_base: i32,
+        pub dw_flags: u32,
+        pub sz_exe_file: [u16; 260],
+    }
+
     pub const TH32CS_SNAPTHREAD: u32 = 0x00000004;
+    pub const TH32CS_SNAPPROCESS: u32 = 0x00000002;
     pub const THREAD_SUSPEND_RESUME: u32 = 0x0002;
 
     extern "system" {
         pub fn CreateToolhelp32Snapshot(dw_flags: u32, th32_process_id: u32) -> isize;
         pub fn Thread32First(h_snapshot: isize, lpte: *mut THREADENTRY32) -> i32;
         pub fn Thread32Next(h_snapshot: isize, lpte: *mut THREADENTRY32) -> i32;
+        pub fn Process32FirstW(h_snapshot: isize, lppe: *mut PROCESSENTRY32W) -> i32;
+        pub fn Process32NextW(h_snapshot: isize, lppe: *mut PROCESSENTRY32W) -> i32;
         pub fn OpenThread(
             dw_desired_access: u32,
             b_inherit_handle: i32,
@@ -36,9 +53,50 @@ mod win32 {
     }
 }
 
-/// 挂起指定 PID 的进程（暂停所有线程）
+/// 递归收集指定 PID 及其所有子进程的 PID
+#[cfg(target_os = "windows")]
+fn collect_process_tree(root_pid: u32) -> Vec<u32> {
+    let mut pids = vec![root_pid];
+    unsafe {
+        use win32::*;
+        let snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+        if snapshot == -1 {
+            return pids;
+        }
+        let mut entry = std::mem::zeroed::<PROCESSENTRY32W>();
+        entry.dw_size = std::mem::size_of::<PROCESSENTRY32W>() as u32;
+
+        // 收集所有进程的 (pid, parent_pid)
+        let mut all_procs = Vec::new();
+        if Process32FirstW(snapshot, &mut entry) != 0 {
+            loop {
+                all_procs.push((entry.th32_process_id, entry.th32_parent_process_id));
+                if Process32NextW(snapshot, &mut entry) == 0 {
+                    break;
+                }
+            }
+        }
+        CloseHandle(snapshot);
+
+        // BFS 收集整棵进程树
+        let mut i = 0;
+        while i < pids.len() {
+            let parent = pids[i];
+            for &(pid, ppid) in &all_procs {
+                if ppid == parent && !pids.contains(&pid) {
+                    pids.push(pid);
+                }
+            }
+            i += 1;
+        }
+    }
+    pids
+}
+
+/// 挂起指定 PID 的进程及其所有子进程（暂停所有线程）
 #[cfg(target_os = "windows")]
 pub fn suspend_process(pid: u32) -> Result<(), String> {
+    let pids = collect_process_tree(pid);
     unsafe {
         use win32::*;
         let snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
@@ -49,7 +107,7 @@ pub fn suspend_process(pid: u32) -> Result<(), String> {
         entry.dw_size = std::mem::size_of::<THREADENTRY32>() as u32;
         if Thread32First(snapshot, &mut entry) != 0 {
             loop {
-                if entry.th32_owner_process_id == pid {
+                if pids.contains(&entry.th32_owner_process_id) {
                     let thread = OpenThread(THREAD_SUSPEND_RESUME, 0, entry.th32_thread_id);
                     if thread != 0 {
                         SuspendThread(thread);
@@ -75,9 +133,10 @@ pub fn suspend_process(pid: u32) -> Result<(), String> {
     Ok(())
 }
 
-/// 恢复指定 PID 的进程（恢复所有线程）
+/// 恢复指定 PID 的进程及其所有子进程（恢复所有线程）
 #[cfg(target_os = "windows")]
 pub fn resume_process(pid: u32) -> Result<(), String> {
+    let pids = collect_process_tree(pid);
     unsafe {
         use win32::*;
         let snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
@@ -88,7 +147,7 @@ pub fn resume_process(pid: u32) -> Result<(), String> {
         entry.dw_size = std::mem::size_of::<THREADENTRY32>() as u32;
         if Thread32First(snapshot, &mut entry) != 0 {
             loop {
-                if entry.th32_owner_process_id == pid {
+                if pids.contains(&entry.th32_owner_process_id) {
                     let thread = OpenThread(THREAD_SUSPEND_RESUME, 0, entry.th32_thread_id);
                     if thread != 0 {
                         ResumeThread(thread);
