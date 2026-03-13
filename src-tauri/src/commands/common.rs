@@ -78,11 +78,14 @@ pub async fn run_ytdlp_json(
         "never".to_string(),
     ];
     
-    // 检测是否为播放列表 URL，添加 --extract-flat=in_playlist 以快速解析播放列表
+    // 检测是否为播放列表 URL，添加 --flat-playlist 以快速解析播放列表
     // 避免逐个获取每个视频的格式信息（这会导致极其缓慢的解析）
     if is_likely_playlist_url(url) && !extra_args.iter().any(|arg| arg.contains("--no-playlist")) {
-        if !extra_args.iter().any(|arg| arg.contains("--extract-flat")) {
-            args.push("--extract-flat=in_playlist".to_string());
+        if !extra_args
+            .iter()
+            .any(|arg| arg.contains("--flat-playlist") || arg.contains("--extract-flat"))
+        {
+            args.push("--flat-playlist".to_string());
         }
     }
     
@@ -101,13 +104,40 @@ pub async fn run_ytdlp_json(
     #[cfg(target_os = "windows")]
     cmd.creation_flags(CREATE_NO_WINDOW);
 
-    let output = match timeout(YTDLP_TIMEOUT, cmd.output()).await {
+    let mut output = match timeout(YTDLP_TIMEOUT, cmd.output()).await {
         Ok(Ok(output)) => output,
         Ok(Err(e)) => return Err(format!("err_run_ytdlp:{}", e)),
         Err(_) => return Err("err_ytdlp_timeout: 获取视频信息超时（可能是网络问题或播放列表过大）".to_string()),
     };
 
-    let stdout = String::from_utf8_lossy(&output.stdout);
+    let mut stdout = String::from_utf8_lossy(&output.stdout).into_owned();
+    let mut stderr = String::from_utf8_lossy(&output.stderr).into_owned();
+
+    // 如果 yt-dlp 报错不支持 --flat-playlist / --extract-flat，则重试一次（兼容旧版本或 youtube-dl）
+    if (stderr.contains("no such option") || stderr.contains("unknown option"))
+        && args.iter().any(|a| a.contains("--flat-playlist") || a.contains("--extract-flat"))
+    {
+        let no_flat_args: Vec<String> = args
+            .into_iter()
+            .filter(|a| !a.contains("--flat-playlist") && !a.contains("--extract-flat"))
+            .collect();
+
+        let mut cmd = tokio::process::Command::new(&ytdlp_path);
+        cmd.args(&no_flat_args)
+            .env("PYTHONUTF8", "1")
+            .env("PYTHONIOENCODING", "utf-8");
+        #[cfg(target_os = "windows")]
+        cmd.creation_flags(CREATE_NO_WINDOW);
+
+        output = match timeout(YTDLP_TIMEOUT, cmd.output()).await {
+            Ok(Ok(output)) => output,
+            Ok(Err(e)) => return Err(format!("err_run_ytdlp:{}", e)),
+            Err(_) => return Err("err_ytdlp_timeout: 获取视频信息超时（可能是网络问题或播放列表过大）".to_string()),
+        };
+
+        stdout = String::from_utf8_lossy(&output.stdout).into_owned();
+        stderr = String::from_utf8_lossy(&output.stderr).into_owned();
+    }
 
     // 优先从 stdout 解析 JSON（yt-dlp 可能在 stderr 输出警告但仍成功）
     if let Some(json_str) = stdout
@@ -119,7 +149,6 @@ pub async fn run_ytdlp_json(
     }
 
     // 未找到 JSON，从 stderr 提取 ERROR 行作为错误信息
-    let stderr = String::from_utf8_lossy(&output.stderr);
     Err(extract_ytdlp_error(&stderr))
 }
 

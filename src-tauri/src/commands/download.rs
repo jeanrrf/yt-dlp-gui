@@ -149,6 +149,13 @@ pub async fn start_download(
         return Err("err_ytdlp_not_installed".to_string());
     }
 
+    // 如果启用了音频提取（-x），确保 FFmpeg 可用，否则 yt-dlp 会失败 após baixar o arquivo.
+    if params.extract_audio {
+        if std::process::Command::new("ffmpeg").arg("-version").output().is_err() {
+            return Err("err_ffmpeg_not_installed".to_string());
+        }
+    }
+
     let args = build_download_args(&app, &params)?;
 
     // 生成临时文件路径，用于 --print-to-file 输出最终文件路径
@@ -506,37 +513,63 @@ fn resolve_output_file(
     processes: &Arc<Mutex<HashMap<String, DownloadProcessInfo>>>,
     task_id: &str,
 ) -> (String, bool) {
+    fn normalize_path(p: &str, base_dir: &str) -> String {
+        let p = p.trim().trim_matches('"');
+        if p.is_empty() {
+            return String::new();
+        }
+        let path = std::path::Path::new(p);
+        if path.is_absolute() {
+            p.to_string()
+        } else {
+            std::path::Path::new(base_dir)
+                .join(path)
+                .to_string_lossy()
+                .to_string()
+        }
+    }
+
+    fn file_exists(p: &str) -> bool {
+        !p.is_empty() && std::path::Path::new(p).exists()
+    }
+
     processes
         .lock()
         .ok()
         .map(|map| {
             map.get(task_id)
                 .map(|info| {
-                    let mut file = String::new();
+                    // 汇总候选路径：优先取 --print-to-file 结果，其次取 stdout 捕获
+                    let mut candidates: Vec<String> = Vec::new();
 
-                    // 优先从临时文件读取（避免 Windows stdout GBK 编码乱码问题）
                     if let Some(ref fp_file) = info.filepath_file {
                         if let Some(path) = read_filepath_from_file(fp_file) {
-                            file = path;
+                            candidates.push(path);
                         }
                         // 清理临时文件
                         let _ = std::fs::remove_file(fp_file);
                     }
 
-                    // 回退：从 stdout 解析的路径
-                    if file.is_empty() {
-                        file = info.output_files.last().cloned().unwrap_or_default();
-                        // 相对路径补全为绝对路径
-                        if !file.is_empty() && !std::path::Path::new(&file).is_absolute() {
-                            file = std::path::PathBuf::from(&info.download_dir)
-                                .join(&file)
-                                .to_string_lossy()
-                                .to_string();
-                        }
-                    }
+                    candidates.extend(info.output_files.iter().cloned());
 
-                    let has = !info.output_files.is_empty() || !file.is_empty();
-                    (file, has)
+                    // 规范化路径并过滤空值
+                    let candidates: Vec<String> = candidates
+                        .into_iter()
+                        .map(|p| normalize_path(&p, &info.download_dir))
+                        .filter(|p| !p.is_empty())
+                        .collect();
+
+                    // 优先选择已存在且不是 .part 的文件；若无，则选择第一个存在的；否则最后一个候选
+                    let selected = candidates
+                        .iter()
+                        .find(|p| file_exists(p) && !p.ends_with(".part"))
+                        .or_else(|| candidates.iter().find(|p| file_exists(p)))
+                        .or_else(|| candidates.last())
+                        .cloned()
+                        .unwrap_or_default();
+
+                    let has = !selected.is_empty();
+                    (selected, has)
                 })
                 .unwrap_or_default()
         })

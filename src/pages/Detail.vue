@@ -38,7 +38,7 @@ const formatTime = (secs: number): string => {
   return h > 0 ? `${pad(h)}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
 };
 
-const downloadMode = ref<"default" | "video" | "audio">("default");
+const downloadMode = ref<"default" | "video" | "audio">("audio");
 
 const selectedVideoFormat = ref(
   videoStore.videoFormats.length > 0 ? videoStore.videoFormats[0].format_id : "",
@@ -54,8 +54,8 @@ const embedThumbnail = ref(false);
 const embedMetadata = ref(false);
 const embedChapters = ref(false);
 const sponsorblockRemove = ref(false);
-const extractAudio = ref(false);
-const audioConvertFormat = ref("");
+const extractAudio = ref(true);
+const audioConvertFormat = ref("mp3");
 const noMerge = ref(false);
 const recodeFormat = ref("");
 const limitRate = ref("");
@@ -81,6 +81,13 @@ const estimatedSizeText = computed(() => {
   if (!estimatedSize.value) return t("common.unknown");
   return formatFileSize(estimatedSize.value);
 });
+
+const flattenError = (e: unknown) => {
+  const msg = e instanceof Error ? e.message : String(e);
+  if (msg === "err_ffmpeg_not_installed") return t("detail.ffmpegNotFound");
+  if (msg === "err_ytdlp_not_installed") return t("detail.ytdlpNotFound");
+  return msg || t("detail.startDownloadFailed");
+};
 
 const handleBack = () => {
   videoStore.clear();
@@ -163,7 +170,15 @@ const handleDownload = async () => {
 
   // 如果是播放列表且选择了多个项目，为每个项目创建单独的下载任务
   if (videoStore.isPlaylist && videoStore.selectedPlaylistItems.length > 0) {
-    const selectedIndices = videoStore.selectedPlaylistItems.sort((a, b) => a - b);
+    let selectedIndices = videoStore.selectedPlaylistItems.sort((a, b) => a - b);
+
+    // 限制批量下载数量
+    if (selectedIndices.length > settingStore.maxBatchSize) {
+      window.$message.warning(
+        t('detail.batchTooLarge', { count: settingStore.maxBatchSize })
+      );
+      selectedIndices = selectedIndices.slice(0, settingStore.maxBatchSize);
+    }
 
     for (const idx of selectedIndices) {
       const entry = videoStore.playlistEntries[idx - 1];
@@ -201,9 +216,7 @@ const handleDownload = async () => {
             params: { id: taskId, ...dlParams },
           });
         } catch (e: unknown) {
-          window.$message.error(
-            e instanceof Error ? e.message : String(e) || t("detail.startDownloadFailed"),
-          );
+          window.$message.error(flattenError(e));
         }
       }
     }
@@ -248,9 +261,7 @@ const handleDownload = async () => {
     });
     router.push({ name: "downloads" });
   } catch (e: unknown) {
-    window.$message.error(
-      e instanceof Error ? e.message : String(e) || t("detail.startDownloadFailed"),
-    );
+    window.$message.error(flattenError(e));
     downloadStore.removeTask(taskId);
   }
 };
@@ -332,7 +343,7 @@ const handleDownload = async () => {
         <n-flex vertical :size="6">
           <n-checkbox
             v-for="(entry, index) in videoStore.playlistEntries"
-            :key="entry.id"
+            :key="`${entry.id}-${index}`"
             :value="index + 1"
             :label="`P${index + 1} ${entry.title}`"
           />

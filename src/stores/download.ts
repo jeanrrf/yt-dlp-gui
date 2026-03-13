@@ -33,6 +33,8 @@ export const useDownloadStore = defineStore("download", () => {
   const loaded = ref(false);
   let listenersSetup = false;
   let saveTimer: ReturnType<typeof setTimeout> | null = null;
+  let listenerRetryCount = 0;
+  const MAX_LISTENER_RETRY = 10;
 
   /** 当前正在下载的任务数 */
   const activeCount = computed(() => tasks.value.filter((t) => t.status === "downloading").length);
@@ -174,53 +176,69 @@ export const useDownloadStore = defineStore("download", () => {
   const setupListeners = async () => {
     if (!isTauri) return;
     if (listenersSetup) return;
-    listenersSetup = true;
+    
+    // Retry mechanism for listener setup
+    while (listenerRetryCount < MAX_LISTENER_RETRY) {
+      try {
+        await listen<ProgressPayload>("download-progress", (event) => {
+          const task = tasks.value.find((t) => t.id === event.payload.id);
+          if (task && task.status === "downloading") {
+            task.percent = event.payload.percent;
+            task.speed = event.payload.speed;
+            task.eta = event.payload.eta;
+            if (event.payload.downloaded) task.downloaded = event.payload.downloaded;
+            if (event.payload.total) task.total = event.payload.total;
+          }
+          updateTaskbarProgress();
+        });
 
-    await listen<ProgressPayload>("download-progress", (event) => {
-      const task = tasks.value.find((t) => t.id === event.payload.id);
-      if (task && task.status === "downloading") {
-        task.percent = event.payload.percent;
-        task.speed = event.payload.speed;
-        task.eta = event.payload.eta;
-        if (event.payload.downloaded) task.downloaded = event.payload.downloaded;
-        if (event.payload.total) task.total = event.payload.total;
-      }
-      updateTaskbarProgress();
-    });
+        await listen<{ id: string; line: string }>("download-log", (event) => {
+          const task = tasks.value.find((t) => t.id === event.payload.id);
+          if (task) {
+            task.logs.push(event.payload.line);
+          }
+        });
 
-    await listen<{ id: string; line: string }>("download-log", (event) => {
-      const task = tasks.value.find((t) => t.id === event.payload.id);
-      if (task) {
-        task.logs.push(event.payload.line);
-      }
-    });
+        await listen<{ id: string; outputFile: string }>("download-complete", (event) => {
+          const task = tasks.value.find((t) => t.id === event.payload.id);
+          if (task) {
+            task.status = "completed";
+            task.percent = 100;
+            task.speed = "";
+            if (event.payload.outputFile) task.outputFile = event.payload.outputFile;
+            notify(
+              i18n.global.t("downloads.notifyComplete"),
+              task.title || i18n.global.t("downloads.notifyCompleteBody"),
+            );
+          }
+          updateTaskbarProgress();
+          tryStartNext();
+        });
 
-    await listen<{ id: string; outputFile: string }>("download-complete", (event) => {
-      const task = tasks.value.find((t) => t.id === event.payload.id);
-      if (task) {
-        task.status = "completed";
-        task.percent = 100;
-        task.speed = "";
-        if (event.payload.outputFile) task.outputFile = event.payload.outputFile;
-        notify(
-          i18n.global.t("downloads.notifyComplete"),
-          task.title || i18n.global.t("downloads.notifyCompleteBody"),
-        );
+        await listen<{ id: string; error: string }>("download-error", (event) => {
+          const task = tasks.value.find((t) => t.id === event.payload.id);
+          if (task && task.status !== "cancelled") {
+            task.status = "error";
+            task.error = event.payload.error;
+            task.speed = "";
+          }
+          updateTaskbarProgress();
+          tryStartNext();
+        });
+        
+        listenersSetup = true;
+        listenerRetryCount = 0; // Reset counter on success
+        break;
+      } catch (error) {
+        listenerRetryCount++;
+        if (listenerRetryCount >= MAX_LISTENER_RETRY) {
+          console.error("Failed to setup download listeners after", MAX_LISTENER_RETRY, "attempts:", error);
+          break;
+        }
+        // Wait before retrying (exponential backoff)
+        await new Promise(resolve => setTimeout(resolve, Math.min(1000 * 2 ** listenerRetryCount, 10000)));
       }
-      updateTaskbarProgress();
-      tryStartNext();
-    });
-
-    await listen<{ id: string; error: string }>("download-error", (event) => {
-      const task = tasks.value.find((t) => t.id === event.payload.id);
-      if (task && task.status !== "cancelled") {
-        task.status = "error";
-        task.error = event.payload.error;
-        task.speed = "";
-      }
-      updateTaskbarProgress();
-      tryStartNext();
-    });
+    }
   };
 
   loadTasks();
@@ -228,6 +246,21 @@ export const useDownloadStore = defineStore("download", () => {
 
   /** 添加新的下载任务到列表顶部 */
   const addTask = (task: DownloadTask) => {
+    const settingStore = useSettingStore();
+    
+    // 检查重复下载
+    if (settingStore.ignoreDuplicateDownloads) {
+      const isDuplicate = tasks.value.some(t => 
+        t.url === task.url && 
+        (t.status === 'queued' || t.status === 'downloading' || t.status === 'paused')
+      );
+      if (isDuplicate) {
+        // 可以添加通知，但由于没有直接访问 i18n，这里跳过或使用简单方式
+        console.warn(`Skipping duplicate download: ${task.title}`);
+        return;
+      }
+    }
+    
     tasks.value.unshift(task);
   };
 

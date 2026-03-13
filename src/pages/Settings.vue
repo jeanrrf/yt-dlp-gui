@@ -48,6 +48,14 @@ const maxConcurrentOptions = computed(() => [
   { label: "5", value: 5 },
 ]);
 
+const maxBatchOptions = computed(() => [
+  { label: t("settings.unlimited"), value: 0 },
+  { label: "10", value: 10 },
+  { label: "25", value: 25 },
+  { label: "50", value: 50 },
+  { label: "100", value: 100 },
+]);
+
 const notifyModeOptions = computed(() => [
   { label: t("settings.noNotification"), value: "none" },
   { label: t("settings.inApp"), value: "app" },
@@ -397,6 +405,23 @@ onMounted(async () => {
               size="small"
               style="width: 120px"
             />
+          </div>
+        </div>
+        <div class="info-list">
+          <div class="info-row">
+            <span class="info-label">{{ $t("settings.maxBatchSize") }}</span>
+            <n-select
+              v-model:value="settingStore.maxBatchSize"
+              :options="maxBatchOptions"
+              size="small"
+              style="width: 120px"
+            />
+          </div>
+        </div>
+        <div class="info-list">
+          <div class="info-row">
+            <span class="info-label">{{ $t("settings.ignoreDuplicateDownloads") }}</span>
+            <n-switch v-model:value="settingStore.ignoreDuplicateDownloads" />
           </div>
         </div>
         <div class="info-list">

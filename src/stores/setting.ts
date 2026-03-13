@@ -44,6 +44,12 @@ export const useSettingStore = defineStore(
     /** 最大同时下载数，0 = 不限制 */
     const maxConcurrentDownloads = ref(0);
 
+    /** 最大批量下载数量，0 = 不限制 */
+    const maxBatchSize = ref(50);
+
+    /** 忽略重复下载 */
+    const ignoreDuplicateDownloads = ref(true);
+
     /** 下载完成通知模式 */
     const notifyMode = ref<"none" | "app" | "system" | "all">("system");
 
@@ -69,6 +75,8 @@ export const useSettingStore = defineStore(
       concurrentFragments,
       noOverwrites,
       maxConcurrentDownloads,
+      maxBatchSize,
+      ignoreDuplicateDownloads,
       notifyMode,
       closeToTray,
       autoCheckUpdate,
