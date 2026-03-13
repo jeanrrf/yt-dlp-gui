@@ -12,7 +12,9 @@ pub struct ProgressInfo {
 /// 解析 --progress-template 输出的 JSON 进度行
 /// 格式: PROGRESS_JSON:{"percent":" 45.2%","speed":"2.50MiB/s","eta":"00:11","downloaded":"22.68MiB","total":"50.35MiB"}
 pub fn parse_progress_json(line: &str) -> Option<ProgressInfo> {
-    let json_str = line.strip_prefix("PROGRESS_JSON:")?;
+    // 查找 "PROGRESS_JSON:" 并提取后面的 JSON，忽略前缀（如 "download:"）
+    let json_start = line.find("PROGRESS_JSON:")?;
+    let json_str = &line[json_start + "PROGRESS_JSON:".len()..];
     let v: serde_json::Value = serde_json::from_str(json_str).ok()?;
 
     // _percent_str 格式为 " 45.2%" 或 "100%"，去掉 % 和空格后解析为数字

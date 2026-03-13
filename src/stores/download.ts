@@ -138,16 +138,13 @@ export const useDownloadStore = defineStore("download", () => {
 
   watch(tasks, saveTasks, { deep: true });
 
-  /** 是否运行在 Tauri 环境 */
-  const isTauri =
-    typeof window !== "undefined" &&
-    !!(window as any).__TAURI__ &&
-    !!(window as any).__TAURI__.event &&
-    !!(window as any).__TAURI__.event.transformCallback;
-
   /** 更新任务栏进度条 */
   const updateTaskbarProgress = () => {
-    if (!isTauri) return;
+    try {
+      if (typeof getCurrentWindow !== 'function') return;
+    } catch {
+      return;
+    }
     const settingStore = useSettingStore();
     const appWindow = getCurrentWindow();
 
@@ -174,20 +171,29 @@ export const useDownloadStore = defineStore("download", () => {
 
   /** 注册 Tauri 后端事件监听，仅初始化一次 */
   const setupListeners = async () => {
-    if (!isTauri) return;
-    if (listenersSetup) return;
+    console.log('[DownloadStore] setupListeners called');
+    if (listenersSetup) {
+      console.log('[DownloadStore] Listeners already setup');
+      return;
+    }
     
     // Retry mechanism for listener setup
     while (listenerRetryCount < MAX_LISTENER_RETRY) {
       try {
         await listen<ProgressPayload>("download-progress", (event) => {
+          console.log('[DownloadStore] Progress event received:', event.payload);
           const task = tasks.value.find((t) => t.id === event.payload.id);
+          console.log('[DownloadStore] Task found:', !!task, task ? task.status : 'N/A');
           if (task && task.status === "downloading") {
+            console.log('[DownloadStore] Updating task progress');
             task.percent = event.payload.percent;
             task.speed = event.payload.speed;
             task.eta = event.payload.eta;
             if (event.payload.downloaded) task.downloaded = event.payload.downloaded;
             if (event.payload.total) task.total = event.payload.total;
+            console.log('[DownloadStore] Task updated:', task.id, task.percent + '%');
+          } else {
+            console.warn('[DownloadStore] Task not found or not downloading');
           }
           updateTaskbarProgress();
         });
@@ -200,8 +206,11 @@ export const useDownloadStore = defineStore("download", () => {
         });
 
         await listen<{ id: string; outputFile: string }>("download-complete", (event) => {
+          console.log('[DownloadStore] Complete event received:', event.payload);
           const task = tasks.value.find((t) => t.id === event.payload.id);
+          console.log('[DownloadStore] Task found for completion:', !!task);
           if (task) {
+            console.log('[DownloadStore] Setting task to completed');
             task.status = "completed";
             task.percent = 100;
             task.speed = "";
@@ -210,6 +219,7 @@ export const useDownloadStore = defineStore("download", () => {
               i18n.global.t("downloads.notifyComplete"),
               task.title || i18n.global.t("downloads.notifyCompleteBody"),
             );
+            console.log('[DownloadStore] Task completed:', task.id);
           }
           updateTaskbarProgress();
           tryStartNext();

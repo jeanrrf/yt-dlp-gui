@@ -38,8 +38,11 @@ fn process_output_line(
     processes: &Arc<Mutex<HashMap<String, DownloadProcessInfo>>>,
     line: &str,
 ) {
+    println!("[DEBUG] process_output_line: task_id={}, line={:?}", task_id, line);
+    
     // 解析 --progress-template 输出的 JSON 进度
     if let Some(info) = parser::parse_progress_json(line) {
+        println!("[DEBUG] Parsed progress: percent={}, speed={}, eta={}", info.percent, info.speed, info.eta);
         let _ = app.emit(
             "download-progress",
             serde_json::json!({
@@ -51,6 +54,7 @@ fn process_output_line(
                 "total": info.total,
             }),
         );
+        println!("[DEBUG] Emitted download-progress event for task {}", task_id);
         return; // 进度行不需要转发到日志
     }
 
@@ -144,8 +148,10 @@ pub async fn start_download(
     state: tauri::State<'_, DownloadState>,
     params: DownloadParams,
 ) -> Result<(), String> {
+    println!("[DEBUG] start_download called: task_id={}, url={}", params.id, params.url);
     let ytdlp_path = utils::get_ytdlp_path(&app)?;
     if !ytdlp_path.exists() {
+        println!("[DEBUG] yt-dlp not installed");
         return Err("err_ytdlp_not_installed".to_string());
     }
 
@@ -157,6 +163,7 @@ pub async fn start_download(
     }
 
     let args = build_download_args(&app, &params)?;
+    println!("[DEBUG] Built {} args for yt-dlp", args.len());
 
     // 生成临时文件路径，用于 --print-to-file 输出最终文件路径
     let app_data = app
@@ -219,10 +226,13 @@ pub async fn start_download(
 
     // 读取 stdout（原始字节，lossy 解码以应对 Windows GBK 编码）
     spawn_output_reader(app.clone(), task_id.clone(), processes.clone(), stdout);
+    println!("[DEBUG] Spawned stdout reader for task {}", task_id);
     // 读取 stderr
     spawn_output_reader(app.clone(), task_id.clone(), processes.clone(), stderr);
+    println!("[DEBUG] Spawned stderr reader for task {}", task_id);
 
     // 等待进程完成并处理结果
+    println!("[DEBUG] Spawning completion handler for task {}", task_id);
     spawn_completion_handler(app.clone(), task_id, processes.clone(), child);
 
     Ok(())
@@ -467,30 +477,39 @@ fn spawn_completion_handler(
     processes: Arc<Mutex<HashMap<String, DownloadProcessInfo>>>,
     mut child: tokio::process::Child,
 ) {
+    println!("[DEBUG] spawn_completion_handler: task_id={}", task_id);
     tokio::spawn(async move {
+        println!("[DEBUG] Completion handler waiting for task {}", task_id);
         let status = child.wait().await;
+        println!("[DEBUG] Task {} finished with status: {:?}", task_id, status);
 
         let was_cancelled = processes
             .lock()
             .ok()
             .and_then(|map| map.get(&task_id).map(|info| info.cancelled))
             .unwrap_or(false);
+        println!("[DEBUG] Task {} was_cancelled: {}", task_id, was_cancelled);
 
         // 获取最终输出文件路径
         let (output_file, has_output) = resolve_output_file(&processes, &task_id);
+        println!("[DEBUG] Task {} output_file: {:?}, has_output: {}", task_id, output_file, has_output);
 
         let success = matches!(&status, Ok(s) if s.success());
+        println!("[DEBUG] Task {} success: {}", task_id, success);
 
         if success || has_output {
+            println!("[DEBUG] Emitting download-complete for task {}", task_id);
             let _ = app.emit(
                 "download-complete",
                 serde_json::json!({ "id": task_id, "outputFile": output_file }),
             );
+            println!("[DEBUG] Emitted download-complete for task {}", task_id);
         } else if !was_cancelled {
             let error_msg = status
                 .as_ref()
                 .map(|s| format!("err_exit_code:{}", s.code().unwrap_or(-1)))
                 .unwrap_or_else(|e| e.to_string());
+            println!("[DEBUG] Emitting download-error for task {}: {}", task_id, error_msg);
             let _ = app.emit(
                 "download-error",
                 serde_json::json!({
@@ -498,12 +517,14 @@ fn spawn_completion_handler(
                     "error": error_msg,
                 }),
             );
+            println!("[DEBUG] Emitted download-error for task {}", task_id);
         }
 
         // 清理进程记录
         if let Ok(mut map) = processes.lock() {
             map.remove(&task_id);
         }
+        println!("[DEBUG] Completion handler finished for task {}", task_id);
     });
 }
 
