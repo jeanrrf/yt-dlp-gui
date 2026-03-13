@@ -4,12 +4,16 @@ use crate::utils;
 use serde_json::Value;
 use std::time::Duration;
 use tauri::AppHandle;
+use tokio::time::timeout;
 
 #[cfg(target_os = "windows")]
 use super::CREATE_NO_WINDOW;
 
 /// 默认 HTTP 请求超时时间（5 分钟）
 const HTTP_TIMEOUT: Duration = Duration::from_secs(300);
+
+/// yt-dlp 进程超时时间（10 分钟）
+const YTDLP_TIMEOUT: Duration = Duration::from_secs(600);
 
 /// 向参数列表追加 Cookie 和代理相关参数
 pub fn append_cookie_proxy_args(
@@ -73,6 +77,15 @@ pub async fn run_ytdlp_json(
         "--color".to_string(),
         "never".to_string(),
     ];
+    
+    // 检测是否为播放列表 URL，添加 --extract-flat=in_playlist 以快速解析播放列表
+    // 避免逐个获取每个视频的格式信息（这会导致极其缓慢的解析）
+    if is_likely_playlist_url(url) && !extra_args.iter().any(|arg| arg.contains("--no-playlist")) {
+        if !extra_args.iter().any(|arg| arg.contains("--extract-flat")) {
+            args.push("--extract-flat=in_playlist".to_string());
+        }
+    }
+    
     for a in extra_args {
         args.push(a.to_string());
     }
@@ -88,10 +101,11 @@ pub async fn run_ytdlp_json(
     #[cfg(target_os = "windows")]
     cmd.creation_flags(CREATE_NO_WINDOW);
 
-    let output = cmd
-        .output()
-        .await
-        .map_err(|e| format!("err_run_ytdlp:{}", e))?;
+    let output = match timeout(YTDLP_TIMEOUT, cmd.output()).await {
+        Ok(Ok(output)) => output,
+        Ok(Err(e)) => return Err(format!("err_run_ytdlp:{}", e)),
+        Err(_) => return Err("err_ytdlp_timeout: 获取视频信息超时（可能是网络问题或播放列表过大）".to_string()),
+    };
 
     let stdout = String::from_utf8_lossy(&output.stdout);
 
@@ -117,6 +131,21 @@ pub fn extract_ytdlp_error(stderr: &str) -> String {
     } else {
         error_lines.join("\n")
     }
+}
+
+/// 检测 URL 是否可能是播放列表
+fn is_likely_playlist_url(url: &str) -> bool {
+    let url_lower = url.to_lowercase();
+    url_lower.contains("playlist?list=") 
+        || url_lower.contains("playlist/")
+        || url_lower.contains("channel/")
+        || url_lower.contains("c/")
+        || url_lower.contains("@") // YouTube 频道
+        || url_lower.contains("/channel/")
+        || url_lower.contains("/user/")
+        || url_lower.contains("list=")
+        || url_lower.contains("album/")
+        || url_lower.contains("albums/")
 }
 
 /// 验证文件路径安全性（防止路径遍历攻击）

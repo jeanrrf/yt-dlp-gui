@@ -22,7 +22,12 @@ export interface LocaleEntry {
 
 export const localeEntries: LocaleEntry[] = [
   { code: "en-US", flag: "🇺🇸", label: "English", match: (lang) => lang.startsWith("en") },
-  { code: "zh-CN", flag: "🇨🇳", label: "简体中文", match: (lang) => lang === "zh-CN" || lang === "zh-SG" || lang === "zh" },
+  {
+    code: "zh-CN",
+    flag: "🇨🇳",
+    label: "简体中文",
+    match: (lang) => lang === "zh-CN" || lang === "zh-SG" || lang === "zh",
+  },
   { code: "zh-TW", flag: "🇭🇰", label: "繁體中文", match: (lang) => lang.startsWith("zh") },
   { code: "ja-JP", flag: "🇯🇵", label: "日本語", match: (lang) => lang.startsWith("ja") },
   { code: "ko-KR", flag: "🇰🇷", label: "한국어", match: (lang) => lang.startsWith("ko") },

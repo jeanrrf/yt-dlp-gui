@@ -14,11 +14,17 @@ const progress = ref(0);
 const contentLength = ref(0);
 const downloaded = ref(0);
 
+const isTauri =
+  typeof window !== "undefined" && !!(window as any).__TAURI__ && !!(window as any).__TAURI__.app;
+
 onMounted(async () => {
+  if (!isTauri) return;
   currentVersion.value = await getVersion();
 });
 
 const handleUpdate = async () => {
+  if (!isTauri) return;
+
   downloading.value = true;
   progress.value = 0;
   try {
@@ -74,7 +80,7 @@ const handleClose = () => {
         </n-tag>
       </n-flex>
 
-      <n-flex vertical :size="8" v-if="statusStore.updateNotes">
+      <n-flex v-if="statusStore.updateNotes" vertical :size="8">
         <n-text depth="3" style="font-size: 13px">
           {{ $t("settings.appUpdateNotes") }}
         </n-text>

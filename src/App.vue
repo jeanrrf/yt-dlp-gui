@@ -22,7 +22,14 @@ const settingStore = useSettingStore();
 const downloadStore = useDownloadStore();
 
 /** 同步托盘菜单语言 */
+const isTauri =
+  typeof window !== "undefined" &&
+  !!(window as any).__TAURI__ &&
+  !!(window as any).__TAURI__.event &&
+  !!(window as any).__TAURI__.window;
+
 const syncTrayMenu = () => {
+  if (!isTauri) return;
   invoke("update_tray_menu", {
     showLabel: t("tray.show"),
     quitLabel: t("tray.quit"),
@@ -61,21 +68,24 @@ const navItems: { key: string; icon: Component; labelKey: string }[] = [
   { key: "toolbox", icon: IconMdiToolbox, labelKey: "nav.toolbox" },
 ];
 
-const win = getCurrentWindow();
+let win: ReturnType<typeof getCurrentWindow> | null = null;
+if (isTauri) {
+  win = getCurrentWindow();
 
-// 关闭窗口时的行为
-win.onCloseRequested(async (event) => {
-  if (settingStore.closeToTray) {
-    event.preventDefault();
-    await win.hide();
-  } else {
-    event.preventDefault();
-    handleQuitRequest();
-  }
-});
+  // 关闭窗口时的行为
+  win?.onCloseRequested(async (event) => {
+    if (settingStore.closeToTray) {
+      event.preventDefault();
+      await win?.hide();
+    } else {
+      event.preventDefault();
+      handleQuitRequest();
+    }
+  });
 
-// 监听托盘退出请求
-listen("tray-quit-requested", () => handleQuitRequest());
+  // 监听托盘退出请求
+  listen("tray-quit-requested", () => handleQuitRequest());
+}
 
 /** 处理深链接 URL（来自浏览器扩展或命令行） */
 const handleDeepLink = (deepLinkUrl: string) => {
@@ -114,22 +124,27 @@ const checkAppUpdate = async () => {
   }
 };
 
-onMounted(() => {
-  win.show();
-  syncTrayMenu();
+onMounted(async () => {
+  if (win?.show) {
+    await win.show();
+    syncTrayMenu();
+  }
   if (settingStore.autoCheckUpdate) {
     checkAppUpdate();
   }
-  // 监听深链接（首次启动时由 tauri-plugin-deep-link 触发）
-  onOpenUrl((urls) => {
-    for (const u of urls) {
-      handleDeepLink(u);
-    }
-  });
-  // 监听 single-instance 转发的深链接（应用已运行时）
-  listen<string>("deep-link-url", (event) => {
-    handleDeepLink(event.payload);
-  });
+
+  if (isTauri) {
+    // 监听深链接（首次启动时由 tauri-plugin-deep-link 触发）
+    onOpenUrl((urls) => {
+      for (const u of urls) {
+        handleDeepLink(u);
+      }
+    });
+    // 监听 single-instance 转发的深链接（应用已运行时）
+    listen<string>("deep-link-url", (event) => {
+      handleDeepLink(event.payload);
+    });
+  }
 });
 </script>
 
