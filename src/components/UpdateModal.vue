@@ -14,8 +14,7 @@ const progress = ref(0);
 const contentLength = ref(0);
 const downloaded = ref(0);
 
-const isTauri =
-  typeof window !== "undefined" && !!(window as any).__TAURI__ && !!(window as any).__TAURI__.app;
+const isTauri = typeof window !== "undefined" && !!window.__TAURI__ && !!window.__TAURI__?.app;
 
 onMounted(async () => {
   if (!isTauri) return;

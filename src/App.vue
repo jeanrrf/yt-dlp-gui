@@ -15,6 +15,10 @@ import { useDownloadStore } from "@/stores/download";
 import { useStatusStore } from "@/stores/status";
 import { localeEntries } from "@/locales";
 
+interface CloseRequestEvent {
+  preventDefault(): void;
+}
+
 const { t } = useI18n();
 const router = useRouter();
 const route = useRoute();
@@ -24,30 +28,38 @@ const downloadStore = useDownloadStore();
 /** 同步托盘菜单语言 */
 const isTauri =
   typeof window !== "undefined" &&
-  !!(window as any).__TAURI__ &&
-  !!(window as any).__TAURI__.event &&
-  !!(window as any).__TAURI__.window;
+  !!window.__TAURI__ &&
+  !!window.__TAURI__?.event &&
+  !!window.__TAURI__?.window;
 
-const syncTrayMenu = () => {
-  if (!isTauri) return;
-  invoke("update_tray_menu", {
-    showLabel: t("tray.show"),
-    quitLabel: t("tray.quit"),
-  });
+const syncTrayMenu = async () => {
+  try {
+    await invoke("update_tray_menu", {
+      showLabel: t("tray.show"),
+      quitLabel: t("tray.quit"),
+    });
+  } catch {
+    // Not in Tauri environment
+  }
 };
 
 watch(() => settingStore.locale, syncTrayMenu);
 
 /** 处理退出请求，有下载任务时弹出确认框 */
-const handleQuitRequest = () => {
+const handleQuitRequest = async () => {
   if (downloadStore.activeCount > 0) {
-    window.$dialog.warning({
-      title: t("tray.quitConfirmTitle"),
-      content: t("tray.quitConfirmContent"),
-      positiveText: t("common.cancel"),
-      negativeText: t("tray.quit"),
-      onNegativeClick: () => exit(0),
-    });
+    try {
+      window.$dialog.warning({
+        title: t("tray.quitConfirmTitle"),
+        content: t("tray.quitConfirmContent"),
+        positiveText: t("common.cancel"),
+        negativeText: t("tray.quit"),
+        onNegativeClick: () => exit(0),
+      });
+    } catch {
+      // Dialog not available
+      exit(0);
+    }
   } else {
     exit(0);
   }
@@ -69,11 +81,11 @@ const navItems: { key: string; icon: Component; labelKey: string }[] = [
 ];
 
 let win: ReturnType<typeof getCurrentWindow> | null = null;
-if (isTauri) {
+try {
   win = getCurrentWindow();
 
   // 关闭窗口时的行为
-  win?.onCloseRequested(async (event) => {
+  win?.onCloseRequested(async (event: CloseRequestEvent) => {
     if (settingStore.closeToTray) {
       event.preventDefault();
       await win?.hide();
@@ -85,6 +97,8 @@ if (isTauri) {
 
   // 监听托盘退出请求
   listen("tray-quit-requested", () => handleQuitRequest());
+} catch {
+  // Not in Tauri environment
 }
 
 /** 处理深链接 URL（来自浏览器扩展或命令行） */

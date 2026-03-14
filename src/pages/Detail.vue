@@ -174,9 +174,7 @@ const handleDownload = async () => {
 
     // 限制批量下载数量
     if (selectedIndices.length > settingStore.maxBatchSize) {
-      window.$message.warning(
-        t('detail.batchTooLarge', { count: settingStore.maxBatchSize })
-      );
+      window.$message.warning(t("detail.batchTooLarge", { count: settingStore.maxBatchSize }));
       selectedIndices = selectedIndices.slice(0, settingStore.maxBatchSize);
     }
 

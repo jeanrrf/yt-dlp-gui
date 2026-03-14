@@ -8,5 +8,11 @@ declare global {
     $notification: NotificationApi;
     $loadingBar: LoadingBarApi;
     $modal: ModalApi;
+    // tauri
+    __TAURI__?: {
+      event: unknown;
+      window: unknown;
+      app: unknown;
+    };
   }
 }

@@ -141,7 +141,7 @@ export const useDownloadStore = defineStore("download", () => {
   /** 更新任务栏进度条 */
   const updateTaskbarProgress = () => {
     try {
-      if (typeof getCurrentWindow !== 'function') return;
+      if (typeof getCurrentWindow !== "function") return;
     } catch {
       return;
     }
@@ -171,82 +171,107 @@ export const useDownloadStore = defineStore("download", () => {
 
   /** 注册 Tauri 后端事件监听，仅初始化一次 */
   const setupListeners = async () => {
-    console.log('[DownloadStore] setupListeners called');
+    console.log("[DownloadStore] setupListeners called");
     if (listenersSetup) {
-      console.log('[DownloadStore] Listeners already setup');
+      console.log("[DownloadStore] Listeners already setup");
       return;
     }
-    
+
     // Retry mechanism for listener setup
     while (listenerRetryCount < MAX_LISTENER_RETRY) {
+      const disposers: Array<() => void> = [];
       try {
-        await listen<ProgressPayload>("download-progress", (event) => {
-          console.log('[DownloadStore] Progress event received:', event.payload);
-          const task = tasks.value.find((t) => t.id === event.payload.id);
-          console.log('[DownloadStore] Task found:', !!task, task ? task.status : 'N/A');
-          if (task && task.status === "downloading") {
-            console.log('[DownloadStore] Updating task progress');
-            task.percent = event.payload.percent;
-            task.speed = event.payload.speed;
-            task.eta = event.payload.eta;
-            if (event.payload.downloaded) task.downloaded = event.payload.downloaded;
-            if (event.payload.total) task.total = event.payload.total;
-            console.log('[DownloadStore] Task updated:', task.id, task.percent + '%');
-          } else {
-            console.warn('[DownloadStore] Task not found or not downloading');
-          }
-          updateTaskbarProgress();
-        });
+        disposers.push(
+          await listen<ProgressPayload>("download-progress", (event) => {
+            console.log("[DownloadStore] Progress event received:", event.payload);
+            const task = tasks.value.find((t) => t.id === event.payload.id);
+            console.log("[DownloadStore] Task found:", !!task, task ? task.status : "N/A");
+            if (task && task.status === "downloading") {
+              console.log("[DownloadStore] Updating task progress");
+              task.percent = event.payload.percent;
+              task.speed = event.payload.speed;
+              task.eta = event.payload.eta;
+              if (event.payload.downloaded) task.downloaded = event.payload.downloaded;
+              if (event.payload.total) task.total = event.payload.total;
+              console.log("[DownloadStore] Task updated:", task.id, task.percent + "%");
+            } else {
+              console.warn("[DownloadStore] Task not found or not downloading");
+            }
+            updateTaskbarProgress();
+          }),
+        );
 
-        await listen<{ id: string; line: string }>("download-log", (event) => {
-          const task = tasks.value.find((t) => t.id === event.payload.id);
-          if (task) {
-            task.logs.push(event.payload.line);
-          }
-        });
+        disposers.push(
+          await listen<{ id: string; line: string }>("download-log", (event) => {
+            const task = tasks.value.find((t) => t.id === event.payload.id);
+            if (task) {
+              task.logs.push(event.payload.line);
+            }
+          }),
+        );
 
-        await listen<{ id: string; outputFile: string }>("download-complete", (event) => {
-          console.log('[DownloadStore] Complete event received:', event.payload);
-          const task = tasks.value.find((t) => t.id === event.payload.id);
-          console.log('[DownloadStore] Task found for completion:', !!task);
-          if (task) {
-            console.log('[DownloadStore] Setting task to completed');
-            task.status = "completed";
-            task.percent = 100;
-            task.speed = "";
-            if (event.payload.outputFile) task.outputFile = event.payload.outputFile;
-            notify(
-              i18n.global.t("downloads.notifyComplete"),
-              task.title || i18n.global.t("downloads.notifyCompleteBody"),
-            );
-            console.log('[DownloadStore] Task completed:', task.id);
-          }
-          updateTaskbarProgress();
-          tryStartNext();
-        });
+        disposers.push(
+          await listen<{ id: string; outputFile: string }>("download-complete", (event) => {
+            console.log("[DownloadStore] Complete event received:", event.payload);
+            const task = tasks.value.find((t) => t.id === event.payload.id);
+            console.log("[DownloadStore] Task found for completion:", !!task);
+            if (task) {
+              console.log("[DownloadStore] Setting task to completed");
+              task.status = "completed";
+              task.percent = 100;
+              task.speed = "";
+              if (event.payload.outputFile) task.outputFile = event.payload.outputFile;
+              notify(
+                i18n.global.t("downloads.notifyComplete"),
+                task.title || i18n.global.t("downloads.notifyCompleteBody"),
+              );
+              console.log("[DownloadStore] Task completed:", task.id);
+            }
+            updateTaskbarProgress();
+            tryStartNext();
+          }),
+        );
 
-        await listen<{ id: string; error: string }>("download-error", (event) => {
-          const task = tasks.value.find((t) => t.id === event.payload.id);
-          if (task && task.status !== "cancelled") {
-            task.status = "error";
-            task.error = event.payload.error;
-            task.speed = "";
-          }
-          updateTaskbarProgress();
-          tryStartNext();
-        });
-        
+        disposers.push(
+          await listen<{ id: string; error: string }>("download-error", (event) => {
+            const task = tasks.value.find((t) => t.id === event.payload.id);
+            if (task && task.status !== "cancelled") {
+              task.status = "error";
+              task.error = event.payload.error;
+              task.speed = "";
+            }
+            updateTaskbarProgress();
+            tryStartNext();
+          }),
+        );
+
         listenersSetup = true;
         listenerRetryCount = 0; // Reset counter on success
         break;
       } catch (error) {
+        // Cleanup any partial listeners before retrying
+        for (const dispose of disposers) {
+          try {
+            dispose();
+          } catch {
+            // ignore
+          }
+        }
+
         listenerRetryCount++;
         if (listenerRetryCount >= MAX_LISTENER_RETRY) {
-          console.error("Failed to setup download listeners after", MAX_LISTENER_RETRY, "attempts:", error);
+          console.error(
+            "Failed to setup download listeners after",
+            MAX_LISTENER_RETRY,
+            "attempts:",
+            error,
+          );
           break;
         }
         // Wait before retrying (exponential backoff)
-        await new Promise(resolve => setTimeout(resolve, Math.min(1000 * 2 ** listenerRetryCount, 10000)));
+        await new Promise((resolve) =>
+          setTimeout(resolve, Math.min(1000 * 2 ** listenerRetryCount, 10000)),
+        );
       }
     }
   };
@@ -257,12 +282,13 @@ export const useDownloadStore = defineStore("download", () => {
   /** 添加新的下载任务到列表顶部 */
   const addTask = (task: DownloadTask) => {
     const settingStore = useSettingStore();
-    
+
     // 检查重复下载
     if (settingStore.ignoreDuplicateDownloads) {
-      const isDuplicate = tasks.value.some(t => 
-        t.url === task.url && 
-        (t.status === 'queued' || t.status === 'downloading' || t.status === 'paused')
+      const isDuplicate = tasks.value.some(
+        (t) =>
+          t.url === task.url &&
+          (t.status === "queued" || t.status === "downloading" || t.status === "paused"),
       );
       if (isDuplicate) {
         // 可以添加通知，但由于没有直接访问 i18n，这里跳过或使用简单方式
@@ -270,7 +296,7 @@ export const useDownloadStore = defineStore("download", () => {
         return;
       }
     }
-    
+
     tasks.value.unshift(task);
   };
 

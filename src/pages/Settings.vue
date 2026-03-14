@@ -74,7 +74,7 @@ const checkYtdlpStatus = async () => {
   ytdlpChecking.value = true;
   try {
     ytdlpStatus.value = await invoke<YtdlpStatus>("get_ytdlp_status");
-  } catch (e) {
+  } catch {
     // ignore
   } finally {
     ytdlpChecking.value = false;
@@ -130,7 +130,7 @@ const checkDenoStatus = async () => {
   denoChecking.value = true;
   try {
     denoStatus.value = await invoke<DenoStatus>("get_deno_status");
-  } catch (e) {
+  } catch {
     // ignore
   } finally {
     denoChecking.value = false;
