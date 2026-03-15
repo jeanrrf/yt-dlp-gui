@@ -8,6 +8,14 @@ mod parser;
 mod process;
 mod utils;
 
+fn reveal_main_window(app: &tauri::AppHandle) {
+    if let Some(window) = app.get_webview_window("main") {
+        let _ = window.unminimize();
+        let _ = window.show();
+        let _ = window.set_focus();
+    }
+}
+
 #[tauri::command]
 fn update_tray_menu(app: tauri::AppHandle, show_label: String, quit_label: String) -> Result<(), String> {
     if let Some(tray) = app.tray_by_id("main") {
@@ -40,11 +48,7 @@ pub fn run() {
                     let _ = app.emit("deep-link-url", arg.clone());
                 }
             }
-            if let Some(w) = app.get_webview_window("main") {
-                let _ = w.unminimize();
-                let _ = w.show();
-                let _ = w.set_focus();
-            }
+            reveal_main_window(app);
         }))
         .setup(|app| {
             let show = MenuItem::with_id(app, "show", "Show", true, None::<&str>)?;
@@ -54,20 +58,10 @@ pub fn run() {
             if let Some(tray) = app.tray_by_id("main") {
                 tray.set_menu(Some(menu))?;
                 tray.on_menu_event(move |app, event| match event.id.as_ref() {
-                    "show" => {
-                        if let Some(w) = app.get_webview_window("main") {
-                            let _ = w.unminimize();
-                            let _ = w.show();
-                            let _ = w.set_focus();
-                        }
-                    }
+                    "show" => reveal_main_window(app),
                     "quit" => {
                         // Emit event to frontend, let it decide whether to confirm
-                        if let Some(w) = app.get_webview_window("main") {
-                            let _ = w.unminimize();
-                            let _ = w.show();
-                            let _ = w.set_focus();
-                        }
+                        reveal_main_window(app);
                         let _ = app.emit("tray-quit-requested", ());
                     }
                     _ => {}
@@ -75,11 +69,7 @@ pub fn run() {
                 tray.on_tray_icon_event(|tray, event| {
                     if let TrayIconEvent::Click { button, .. } = event {
                         if button == tauri::tray::MouseButton::Left {
-                            if let Some(w) = tray.app_handle().get_webview_window("main") {
-                                let _ = w.unminimize();
-                                let _ = w.show();
-                                let _ = w.set_focus();
-                            }
+                            reveal_main_window(&tray.app_handle());
                         }
                     }
                 });

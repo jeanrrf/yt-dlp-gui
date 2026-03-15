@@ -23,13 +23,11 @@ if (!videoStore.videoInfo) {
   router.replace({ name: "home" });
 }
 
-/** 将 Naive UI time picker 的时间戳值转换为当天秒数 */
 const timeToSeconds = (ts: number): number => {
   const d = new Date(ts);
   return d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds();
 };
 
-/** 秒数格式化为 HH:MM:SS */
 const formatTime = (secs: number): string => {
   const h = Math.floor(secs / 3600);
   const m = Math.floor((secs % 3600) / 60);
@@ -94,7 +92,6 @@ const handleBack = () => {
   router.push({ name: "home" });
 };
 
-/** 重新获取视频信息 */
 const handleRefresh = async () => {
   if (!videoStore.url) return;
   const success = await videoStore.fetchVideoInfo(videoStore.url);
@@ -107,7 +104,6 @@ const handleRefresh = async () => {
   }
 };
 
-/** 开始下载视频 */
 const handleDownload = async () => {
   if (!settingStore.downloadDir) {
     window.$message.warning(t("detail.setDownloadDirFirst"));
@@ -132,9 +128,9 @@ const handleDownload = async () => {
       if (downloadMode.value === "video") parts.push(t("detail.videoOnly"));
     }
     if (startTime.value != null || endTime.value != null) {
-      const s = startTime.value != null ? formatTime(timeToSeconds(startTime.value)) : "00:00";
-      const e = endTime.value != null ? formatTime(timeToSeconds(endTime.value)) : t("detail.end");
-      parts.push(`✂${s}-${e}`);
+      const start = startTime.value != null ? formatTime(timeToSeconds(startTime.value)) : "00:00";
+      const end = endTime.value != null ? formatTime(timeToSeconds(endTime.value)) : t("detail.end");
+      parts.push(`cut ${start}-${end}`);
     }
     return parts.join(" ") || t("detail.defaultQuality");
   };
@@ -168,61 +164,39 @@ const handleDownload = async () => {
     playlistItems: null,
   };
 
-  // 如果是播放列表且选择了多个项目，为每个项目创建单独的下载任务
   if (videoStore.isPlaylist && videoStore.selectedPlaylistItems.length > 0) {
-    let selectedIndices = videoStore.selectedPlaylistItems.sort((a, b) => a - b);
+    let selectedIndices = [...videoStore.selectedPlaylistItems].sort((a, b) => a - b);
 
-    // 限制批量下载数量
-    if (selectedIndices.length > settingStore.maxBatchSize) {
+    if (settingStore.maxBatchSize > 0 && selectedIndices.length > settingStore.maxBatchSize) {
       window.$message.warning(t("detail.batchTooLarge", { count: settingStore.maxBatchSize }));
       selectedIndices = selectedIndices.slice(0, settingStore.maxBatchSize);
     }
 
-    for (const idx of selectedIndices) {
-      const entry = videoStore.playlistEntries[idx - 1];
-      if (!entry || !entry.url) continue;
+    const playlistTasks = selectedIndices
+      .map((idx) => {
+        const entry = videoStore.playlistEntries[idx - 1];
+        if (!entry || !entry.url) return null;
 
-      const taskId = `dl_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-      const dlParams = {
-        url: entry.url,
-        ...baseParams,
-      };
+        return {
+          id: `dl_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+          url: entry.url,
+          title: entry.title || `${videoStore.videoInfo?.title || t("detail.unknownVideo")} - P${idx}`,
+          thumbnail: entry.thumbnail || videoStore.videoInfo?.thumbnail || "",
+          formatLabel: buildFormatLabel(),
+          createdAt: Date.now(),
+          params: {
+            url: entry.url,
+            ...baseParams,
+          },
+        };
+      })
+      .filter((task): task is NonNullable<typeof task> => task !== null);
 
-      const shouldQueue = !downloadStore.canStartNow();
-
-      downloadStore.addTask({
-        id: taskId,
-        url: entry.url,
-        title:
-          entry.title || `${videoStore.videoInfo?.title || t("detail.unknownVideo")} - P${idx}`,
-        thumbnail: entry.thumbnail || videoStore.videoInfo?.thumbnail || "",
-        formatLabel: buildFormatLabel(),
-        status: shouldQueue ? "queued" : "downloading",
-        percent: 0,
-        speed: "",
-        eta: "",
-        downloaded: "",
-        total: "",
-        logs: [],
-        createdAt: Date.now(),
-        params: dlParams,
-      });
-
-      if (!shouldQueue) {
-        try {
-          await invoke("start_download", {
-            params: { id: taskId, ...dlParams },
-          });
-        } catch (e: unknown) {
-          window.$message.error(flattenError(e));
-        }
-      }
-    }
+    await downloadStore.enqueuePlaylistTasks(playlistTasks);
     router.push({ name: "downloads" });
     return;
   }
 
-  // 单个视频下载
   const taskId = `dl_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
   const dlParams = {
     url: videoStore.url,

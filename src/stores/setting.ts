@@ -45,7 +45,7 @@ export const useSettingStore = defineStore(
     const maxConcurrentDownloads = ref(0);
 
     /** 最大批量下载数量，0 = 不限制 */
-    const maxBatchSize = ref(50);
+    const maxBatchSize = ref(0);
 
     /** 忽略重复下载 */
     const ignoreDuplicateDownloads = ref(true);
