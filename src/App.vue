@@ -171,8 +171,11 @@ onMounted(async () => {
       <n-layout-header bordered class="app-header">
         <div class="header-side">
           <div class="logo" @click="router.push({ name: 'home' })">
-            <icon-mdi-youtube />
-            <span class="logo-text">GUI</span>
+            <img src="/sentinnell-mark.png" alt="SENTINNELL PLAY NOW" class="logo-mark" />
+            <div class="logo-copy">
+              <span class="logo-title">SENTINNELL</span>
+              <span class="logo-text">PLAY NOW</span>
+            </div>
           </div>
         </div>
         <div class="header-nav">
@@ -271,7 +274,7 @@ onMounted(async () => {
               size="tiny"
               style="font-size: 12px"
             >
-              YDL GUI
+              SENTINNELL PLAY NOW
             </n-button>
           </n-text>
         </n-flex>
@@ -286,9 +289,10 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   padding: 0 16px;
+  backdrop-filter: blur(18px);
 
   .header-side {
-    width: 120px;
+    width: 220px;
     flex-shrink: 0;
     display: flex;
     align-items: center;
@@ -302,24 +306,44 @@ onMounted(async () => {
   .logo {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 10px;
     user-select: none;
     cursor: pointer;
 
-    svg {
-      font-size: 28px;
-      transition: color 0.3s;
+    .logo-mark {
+      width: 32px;
+      height: 32px;
+      border-radius: 10px;
+      box-shadow: 0 10px 24px rgba(16, 18, 38, 0.18);
+      transition:
+        transform 0.24s ease,
+        box-shadow 0.24s ease;
+    }
+
+    .logo-copy {
+      display: flex;
+      flex-direction: column;
+      line-height: 1;
+    }
+
+    .logo-title {
+      font-family: "Bahnschrift", "Segoe UI Variable Display", "Segoe UI", sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
     }
 
     .logo-text {
-      font-weight: 700;
-      font-size: 16px;
-      letter-spacing: 0.5px;
+      font-family: "Bahnschrift", "Segoe UI Variable Display", "Segoe UI", sans-serif;
+      font-size: 11px;
+      letter-spacing: 0.18em;
+      opacity: 0.72;
     }
 
     &:hover {
-      svg {
-        color: #ff0033;
+      .logo-mark {
+        transform: translateY(-1px) scale(1.04);
+        box-shadow: 0 16px 30px rgba(99, 58, 255, 0.24);
       }
     }
   }
@@ -370,5 +394,26 @@ onMounted(async () => {
 .app-footer {
   padding: 24px 0 4px;
   flex-shrink: 0;
+}
+
+@media (max-width: 760px) {
+  .app-header {
+    .header-side {
+      width: 164px;
+    }
+
+    .logo {
+      gap: 8px;
+    }
+
+    .logo-title {
+      font-size: 12px;
+    }
+
+    .logo-text {
+      font-size: 10px;
+      letter-spacing: 0.12em;
+    }
+  }
 }
 </style>

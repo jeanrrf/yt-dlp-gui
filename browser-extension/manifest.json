@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "YDL GUI Helper",
+  "name": "SENTINNELL PLAY NOW Helper",
   "version": "1.0.0",
-  "description": "Send video URLs and cookies to YDL GUI for downloading",
+  "description": "Send video URLs and cookies to SENTINNELL PLAY NOW for downloading",
   "permissions": ["cookies", "activeTab"],
   "host_permissions": [
     "*://*.youtube.com/*",

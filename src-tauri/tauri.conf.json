@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "YDL GUI",
+  "productName": "SENTINNELL PLAY NOW",
   "version": "0.3.1",
   "identifier": "com.imsyy.yt-dlp-gui",
   "build": {
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "YDL GUI",
+        "title": "SENTINNELL PLAY NOW",
         "width": 800,
         "height": 600,
         "visible": false
@@ -24,7 +24,7 @@
     "trayIcon": {
       "iconPath": "icons/icon.png",
       "iconAsTemplate": true,
-      "tooltip": "YDL GUI"
+      "tooltip": "SENTINNELL PLAY NOW"
     }
   },
   "bundle": {
@@ -46,9 +46,7 @@
       }
     },
     "updater": {
-      "endpoints": [
-        "https://github.com/imsyy/yt-dlp-gui/releases/latest/download/latest.json"
-      ],
+      "endpoints": ["https://github.com/imsyy/yt-dlp-gui/releases/latest/download/latest.json"],
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEJENzM3NUZDRDIzNDM3MzcKUldRM056VFMvSFZ6dldFQXBCT0JXcmNLRHRmd0tKNE1ucEFnWTl2WHZOcHFSZ205QnFFNjRibUMK",
       "windows": {
         "installMode": "passive"

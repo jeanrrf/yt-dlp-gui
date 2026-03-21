@@ -12,12 +12,22 @@ export const useVideoStore = defineStore("video", () => {
   const audioFormats = ref<VideoFormat[]>([]);
   const fetching = ref(false);
 
-  // 播放列表
   const isPlaylist = ref(false);
   const playlistEntries = ref<PlaylistEntry[]>([]);
   const selectedPlaylistItems = ref<number[]>([]);
 
-  /** 获取当前有效的 Cookie 参数 */
+  const dedupePlaylistEntries = (entries: PlaylistEntry[]): PlaylistEntry[] => {
+    const seenIds = new Set<string>();
+
+    return entries.filter((entry) => {
+      const videoId = entry.id?.trim();
+      if (!videoId) return true;
+      if (seenIds.has(videoId)) return false;
+      seenIds.add(videoId);
+      return true;
+    });
+  };
+
   const getCookieArgs = async (): Promise<{
     cookieFile: string | null;
     cookieBrowser: string | null;
@@ -37,7 +47,6 @@ export const useVideoStore = defineStore("video", () => {
     return { cookieFile: null, cookieBrowser: null };
   };
 
-  /** 解析视频信息并填充 store，返回是否成功 */
   const fetchVideoInfo = async (targetUrl: string): Promise<boolean> => {
     const settingStore = useSettingStore();
     fetching.value = true;
@@ -53,18 +62,25 @@ export const useVideoStore = defineStore("video", () => {
       url.value = targetUrl;
 
       if (info._type === "playlist" && info.entries?.length) {
+        const normalizedEntries = dedupePlaylistEntries(info.entries);
+
         isPlaylist.value = true;
-        playlistEntries.value = info.entries.map((e, i) => ({
-          id: e.id || String(i + 1),
-          title: e.title || `第 ${i + 1} P`,
-          duration: e.duration ?? null,
-          url: e.url || "",
+        playlistEntries.value = normalizedEntries.map((entry, index) => ({
+          id: entry.id || String(index + 1),
+          title: entry.title || `第 ${index + 1} P`,
+          duration: entry.duration ?? null,
+          url: entry.url || "",
+          thumbnail: entry.thumbnail,
+          formats: entry.formats,
         }));
-        selectedPlaylistItems.value = playlistEntries.value.map((_, i) => i + 1);
-        const firstEntry = info.entries[0];
+        selectedPlaylistItems.value = playlistEntries.value.map((_, index) => index + 1);
+
+        const firstEntry = normalizedEntries[0];
         const formats: VideoFormat[] = firstEntry?.formats || info.formats || [];
         videoInfo.value = {
           ...info,
+          entries: normalizedEntries,
+          playlist_count: normalizedEntries.length,
           title: info.title || firstEntry?.title || "",
           thumbnail: info.thumbnail || firstEntry?.thumbnail || "",
           duration: info.duration || firstEntry?.duration || 0,
@@ -85,7 +101,6 @@ export const useVideoStore = defineStore("video", () => {
         .filter((f) => f.acodec && f.acodec !== "none" && (!f.vcodec || f.vcodec === "none"))
         .sort((a, b) => (b.abr || 0) - (a.abr || 0));
 
-      // YouTube URL 且 Deno 未安装时提示
       if (/youtube\.com|youtu\.be/i.test(targetUrl)) {
         try {
           const denoStatus = await invoke<DenoStatus>("get_deno_status");

@@ -125,7 +125,7 @@
     "all": "Все",
     "noOverwrites": "Не перезаписывать существующие файлы",
     "about": "О программе",
-    "aboutDesc": "Графический интерфейс для yt-dlp на базе Tauri 2 + Vue 3 + Naive UI",
+    "aboutDesc": "SENTINNELL PLAY NOW создан на базе Tauri 2 + Vue 3 + Naive UI",
     "license": "Лицензия",
     "repository": "Репозиторий",
     "platform": "Платформа",

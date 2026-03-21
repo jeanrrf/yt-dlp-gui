@@ -54,7 +54,9 @@ export const useDownloadStore = defineStore("download", () => {
   let listenerRetryCount = 0;
   const MAX_LISTENER_RETRY = 10;
 
-  const activeCount = computed(() => tasks.value.filter((task) => task.status === "downloading").length);
+  const activeCount = computed(
+    () => tasks.value.filter((task) => task.status === "downloading").length,
+  );
 
   const isBusyTask = (status: DownloadTask["status"]) =>
     status === "queued" || status === "downloading" || status === "paused";
@@ -171,7 +173,9 @@ export const useDownloadStore = defineStore("download", () => {
       if (!task.createdAt) task.createdAt = Date.now();
     }
 
-    const completedWithFile = restoredTasks.filter((task) => task.status === "completed" && task.outputFile);
+    const completedWithFile = restoredTasks.filter(
+      (task) => task.status === "completed" && task.outputFile,
+    );
     if (completedWithFile.length > 0) {
       try {
         const paths = completedWithFile.map((task) => task.outputFile!);
@@ -221,7 +225,9 @@ export const useDownloadStore = defineStore("download", () => {
       );
       appWindow.setProgressBar({ status: ProgressBarStatus.Normal, progress: avg });
     } else if (paused.length > 0) {
-      const avg = Math.round(paused.reduce((sum, task) => sum + (task.percent || 0), 0) / paused.length);
+      const avg = Math.round(
+        paused.reduce((sum, task) => sum + (task.percent || 0), 0) / paused.length,
+      );
       appWindow.setProgressBar({ status: ProgressBarStatus.Paused, progress: avg });
     } else {
       appWindow.setProgressBar({ status: ProgressBarStatus.None });
@@ -446,7 +452,8 @@ export const useDownloadStore = defineStore("download", () => {
 
   const clearFinished = () => {
     tasks.value = tasks.value.filter(
-      (task) => task.status !== "completed" && task.status !== "error" && task.status !== "cancelled",
+      (task) =>
+        task.status !== "completed" && task.status !== "error" && task.status !== "cancelled",
     );
   };
 

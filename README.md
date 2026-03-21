@@ -1,8 +1,8 @@
 <div align="center">
 
-<img src="./public/app-icon.svg" width="80" height="80" alt="yt-dlp GUI">
+<img src="./public/app-icon.svg" width="80" height="80" alt="SENTINNELL PLAY NOW">
 
-# yt-dlp GUI
+# SENTINNELL PLAY NOW
 
 A modern, beautiful desktop GUI for [yt-dlp](https://github.com/yt-dlp/yt-dlp).
 
@@ -19,9 +19,9 @@ Download videos from YouTube, Bilibili, Twitter/X and [1000+ websites](https://g
 
 ---
 
-## Why yt-dlp GUI?
+## Why SENTINNELL PLAY NOW?
 
-yt-dlp is powerful, but its command-line interface can be intimidating. **yt-dlp GUI** wraps it in a clean, native desktop app — no terminal needed.
+yt-dlp is powerful, but its command-line interface can be intimidating. **SENTINNELL PLAY NOW** wraps it in a clean, native desktop app — no terminal needed.
 
 - **Zero config to start** — paste a link, pick a quality, click download
 - **Native & lightweight** — built with Tauri 2 + Rust, ~10 MB installer, low memory usage
@@ -60,16 +60,16 @@ yt-dlp is powerful, but its command-line interface can be intimidating. **yt-dlp
 
 ## Screenshots
 
-| Home (Dark) | Home (Light) |
-|:-:|:-:|
+|         Home (Dark)          |               Home (Light)               |
+| :--------------------------: | :--------------------------------------: |
 | ![Home](screenshot/home.png) | ![Home Light](screenshot/home-light.png) |
 
-| Download Options | Extra Options |
-|:-:|:-:|
+|           Download Options           |                  Extra Options                   |
+| :----------------------------------: | :----------------------------------------------: |
 | ![Download](screenshot/download.png) | ![Download Other](screenshot/download-other.png) |
 
-| Downloading | Tools |
-|:-:|:-:|
+|                Downloading                 |             Tools              |
+| :----------------------------------------: | :----------------------------: |
 | ![Downloading](screenshot/downloading.png) | ![Tools](screenshot/tools.png) |
 
 ## Getting Started
@@ -78,17 +78,17 @@ yt-dlp is powerful, but its command-line interface can be intimidating. **yt-dlp
 
 Grab the latest release for your platform from [**Releases**](https://github.com/imsyy/yt-dlp-gui/releases):
 
-| Platform | File |
-|----------|------|
-| Windows  | `.exe` installer |
-| macOS    | `.dmg` |
+| Platform | File                 |
+| -------- | -------------------- |
+| Windows  | `.exe` installer     |
+| macOS    | `.dmg`               |
 | Linux    | `.AppImage` / `.deb` |
 
 ### First Launch
 
 1. Open the app and go to **Settings**
 2. Click **Download** next to yt-dlp — the binary is fetched automatically
-3. *(Optional)* Install **Deno** runtime for full YouTube format support
+3. _(Optional)_ Install **Deno** runtime for full YouTube format support
 4. Set your **download directory**
 5. Go back to the home page, paste a URL, and start downloading
 
@@ -97,14 +97,14 @@ Grab the latest release for your platform from [**Releases**](https://github.com
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| Backend | [Tauri 2](https://tauri.app/) + [Rust](https://www.rust-lang.org/) |
-| Frontend | [Vue 3](https://vuejs.org/) + [TypeScript](https://www.typescriptlang.org/) |
-| UI | [Naive UI](https://www.naiveui.com/) |
-| State | [Pinia](https://pinia.vuejs.org/) with persistence |
-| Build | [Vite](https://vitejs.dev/) |
-| i18n | [Vue I18n](https://vue-i18n.intlify.dev/) — zh-CN, zh-TW, en-US, ja-JP, ko-KR, es-ES, ru-RU |
+| Layer    | Technology                                                                                  |
+| -------- | ------------------------------------------------------------------------------------------- |
+| Backend  | [Tauri 2](https://tauri.app/) + [Rust](https://www.rust-lang.org/)                          |
+| Frontend | [Vue 3](https://vuejs.org/) + [TypeScript](https://www.typescriptlang.org/)                 |
+| UI       | [Naive UI](https://www.naiveui.com/)                                                        |
+| State    | [Pinia](https://pinia.vuejs.org/) with persistence                                          |
+| Build    | [Vite](https://vitejs.dev/)                                                                 |
+| i18n     | [Vue I18n](https://vue-i18n.intlify.dev/) — zh-CN, zh-TW, en-US, ja-JP, ko-KR, es-ES, ru-RU |
 
 ## Development
 

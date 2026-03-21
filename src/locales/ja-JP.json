@@ -125,7 +125,7 @@
     "all": "すべて",
     "noOverwrites": "既存ファイルを上書きしない",
     "about": "このアプリについて",
-    "aboutDesc": "Tauri 2 + Vue 3 + Naive UIで構築されたyt-dlpのGUIツール",
+    "aboutDesc": "SENTINNELL PLAY NOW は Tauri 2 + Vue 3 + Naive UI で構築されています",
     "license": "ライセンス",
     "repository": "リポジトリ",
     "platform": "プラットフォーム",

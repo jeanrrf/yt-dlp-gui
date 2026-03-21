@@ -2,24 +2,17 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/app-icon.svg" />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="referrer" content="no-referrer" />
-    <title>YDL GUI</title>
+    <title>SENTINNELL PLAY NOW</title>
   </head>
 
   <body>
     <div id="app">
       <div id="loading-screen">
         <svg class="spinner" viewBox="0 0 50 50">
-          <circle
-            cx="25"
-            cy="25"
-            r="20"
-            fill="none"
-            stroke-width="4"
-            stroke-linecap="round"
-          />
+          <circle cx="25" cy="25" r="20" fill="none" stroke-width="4" stroke-linecap="round" />
         </svg>
       </div>
     </div>
@@ -30,14 +23,20 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        background: #fff;
+        background:
+          radial-gradient(circle at 24% 22%, rgba(57, 164, 255, 0.22), transparent 28%),
+          radial-gradient(circle at 78% 74%, rgba(255, 43, 220, 0.2), transparent 28%),
+          linear-gradient(155deg, #060810, #130820 62%, #090612);
         transition:
           opacity 0.2s,
           background 0.2s;
         z-index: 9999;
       }
       #loading-screen.dark {
-        background: #1e1e1e;
+        background:
+          radial-gradient(circle at 24% 22%, rgba(57, 164, 255, 0.22), transparent 28%),
+          radial-gradient(circle at 78% 74%, rgba(255, 43, 220, 0.2), transparent 28%),
+          linear-gradient(155deg, #060810, #130820 62%, #090612);
       }
       #loading-screen .spinner {
         width: 36px;
@@ -45,12 +44,12 @@
         animation: spin 0.8s linear infinite;
       }
       #loading-screen .spinner circle {
-        stroke: #999;
+        stroke: #74cfff;
         stroke-dasharray: 90, 150;
         stroke-dashoffset: 0;
       }
       #loading-screen.dark .spinner circle {
-        stroke: #555;
+        stroke: #ff67eb;
       }
       @keyframes spin {
         to {
@@ -66,8 +65,7 @@
           const mode = raw ? JSON.parse(raw).themeMode : "auto";
           const isDark =
             mode === "dark" ||
-            (mode === "auto" &&
-              window.matchMedia("(prefers-color-scheme: dark)").matches);
+            (mode === "auto" && window.matchMedia("(prefers-color-scheme: dark)").matches);
           if (isDark) {
             document.getElementById("loading-screen").classList.add("dark");
           }

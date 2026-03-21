@@ -129,7 +129,8 @@ const handleDownload = async () => {
     }
     if (startTime.value != null || endTime.value != null) {
       const start = startTime.value != null ? formatTime(timeToSeconds(startTime.value)) : "00:00";
-      const end = endTime.value != null ? formatTime(timeToSeconds(endTime.value)) : t("detail.end");
+      const end =
+        endTime.value != null ? formatTime(timeToSeconds(endTime.value)) : t("detail.end");
       parts.push(`cut ${start}-${end}`);
     }
     return parts.join(" ") || t("detail.defaultQuality");
@@ -166,10 +167,11 @@ const handleDownload = async () => {
 
   if (videoStore.isPlaylist && videoStore.selectedPlaylistItems.length > 0) {
     let selectedIndices = [...videoStore.selectedPlaylistItems].sort((a, b) => a - b);
+    const maxBatchSize = Math.max(0, Number(settingStore.maxBatchSize) || 0);
 
-    if (settingStore.maxBatchSize > 0 && selectedIndices.length > settingStore.maxBatchSize) {
-      window.$message.warning(t("detail.batchTooLarge", { count: settingStore.maxBatchSize }));
-      selectedIndices = selectedIndices.slice(0, settingStore.maxBatchSize);
+    if (maxBatchSize > 0 && selectedIndices.length > maxBatchSize) {
+      window.$message.warning(t("detail.batchTooLarge", { count: maxBatchSize }));
+      selectedIndices = selectedIndices.slice(0, maxBatchSize);
     }
 
     const playlistTasks = selectedIndices
@@ -180,7 +182,8 @@ const handleDownload = async () => {
         return {
           id: `dl_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
           url: entry.url,
-          title: entry.title || `${videoStore.videoInfo?.title || t("detail.unknownVideo")} - P${idx}`,
+          title:
+            entry.title || `${videoStore.videoInfo?.title || t("detail.unknownVideo")} - P${idx}`,
           thumbnail: entry.thumbnail || videoStore.videoInfo?.thumbnail || "",
           formatLabel: buildFormatLabel(),
           createdAt: Date.now(),
