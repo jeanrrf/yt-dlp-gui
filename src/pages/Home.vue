@@ -3,18 +3,21 @@ import { readText } from "@tauri-apps/plugin-clipboard-manager";
 import { isValidUrl } from "@/utils/validate";
 import { useVideoStore } from "@/stores/video";
 import { useHistoryStore } from "@/stores/history";
-import PulseVisualizer from "@/components/home/PulseVisualizer.vue";
 import { useI18n } from "vue-i18n";
 
 const { t, tm } = useI18n();
 const router = useRouter();
+const route = useRoute();
 const videoStore = useVideoStore();
 const historyStore = useHistoryStore();
 
 const url = ref("");
-
 const historyIndex = ref(-1);
 const showHistory = ref(false);
+const currentTipIndex = ref(0);
+let tipTimer: ReturnType<typeof setInterval> | null = null;
+
+const tips = computed(() => tm("home.tips") as string[]);
 
 const handleKeydown = (e: KeyboardEvent) => {
   if (e.key === "Enter") {
@@ -72,7 +75,6 @@ const handlePaste = async () => {
   }
 };
 
-/** 格式化历史记录时间 */
 const formatHistoryTime = (time: number): string => {
   if (!time) return "";
   const now = new Date();
@@ -88,47 +90,10 @@ const formatHistoryTime = (time: number): string => {
   return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")} ${timeStr}`;
 };
 
-const currentTipIndex = ref(0);
-let tipTimer: ReturnType<typeof setInterval> | null = null;
-
-const route = useRoute();
-
-onMounted(() => {
-  tipTimer = setInterval(() => {
-    const tips = tm("home.tips");
-    currentTipIndex.value = (currentTipIndex.value + 1) % tips.length;
-  }, 4000);
-  // 从深链接 query 参数自动填充 URL 并触发解析
-  const deepLinkUrl = route.query.url as string | undefined;
-  if (deepLinkUrl) {
-    url.value = deepLinkUrl;
-    router.replace({ name: "home", query: {} });
-    handleSearch();
-  }
-});
-
-// 监听 query 变化（已在首页时收到新深链接）
-watch(
-  () => route.query.url,
-  (newUrl) => {
-    if (newUrl && typeof newUrl === "string") {
-      url.value = newUrl;
-      router.replace({ name: "home", query: {} });
-      handleSearch();
-    }
-  },
-);
-
-onUnmounted(() => {
-  if (tipTimer) clearInterval(tipTimer);
-});
-
-/** 解析视频链接，获取视频信息与可用格式 */
 const handleSearch = async () => {
   let trimmed = url.value.trim();
   if (!trimmed) return;
 
-  // 如果用户粘贴的是 youtube playlist/watch query（没有前缀），自动补全
   if (/^playlist\?/i.test(trimmed) || /^watch\?/i.test(trimmed)) {
     trimmed = `https://www.youtube.com/${trimmed}`;
     url.value = trimmed;
@@ -138,96 +103,118 @@ const handleSearch = async () => {
     window.$message.warning(t("home.enterValidUrl"));
     return;
   }
+
   const success = await videoStore.fetchVideoInfo(trimmed);
   if (success) {
     historyStore.add(trimmed, videoStore.videoInfo?.title);
     router.push({ name: "detail" });
   }
 };
+
+onMounted(() => {
+  tipTimer = setInterval(() => {
+    currentTipIndex.value = (currentTipIndex.value + 1) % tips.value.length;
+  }, 4000);
+
+  const deepLinkUrl = route.query.url as string | undefined;
+  if (deepLinkUrl) {
+    url.value = deepLinkUrl;
+    router.replace({ name: "home", query: {} });
+    void handleSearch();
+  }
+});
+
+watch(
+  () => route.query.url,
+  (newUrl) => {
+    if (newUrl && typeof newUrl === "string") {
+      url.value = newUrl;
+      router.replace({ name: "home", query: {} });
+      void handleSearch();
+    }
+  },
+);
+
+onUnmounted(() => {
+  if (tipTimer) clearInterval(tipTimer);
+});
 </script>
 
 <template>
   <div class="home-page">
-    <n-flex vertical align="center" justify="center" :size="20" class="search-view">
-      <div class="hero-stage">
-        <div class="hero-copy">
-          <span class="hero-badge">{{ $t("home.brandBadge") }}</span>
-          <img src="/sentinnell-logo.png" alt="SENTINNELL PLAY NOW" class="hero-lockup" />
-          <n-text class="hero-headline">
-            {{ $t("home.brandHeadline") }}
-          </n-text>
-          <n-text depth="3" class="hero-description">
-            {{ $t("home.brandSubline") }}
-          </n-text>
-          <div class="hero-chip-row">
-            <span class="hero-chip">TAURI 2</span>
-            <span class="hero-chip">MIC REACTIVE</span>
-            <span class="hero-chip">NEON DOWNLOAD</span>
-          </div>
-          <n-text depth="3" class="hero-slogan">
+    <div class="home-shell">
+      <div class="home-brand">
+        <img src="/sentinnell-mark.png" alt="SENTINNELL PLAY NOW" class="home-mark" />
+        <div class="home-copy">
+          <span class="home-kicker">SENTINNELL PLAY NOW</span>
+          <n-text depth="3" class="home-slogan">
             {{ $t("home.slogan") }}
           </n-text>
         </div>
-        <PulseVisualizer class="hero-visualizer" />
       </div>
-      <n-flex :size="8" :wrap="false" class="search-bar">
-        <n-input
-          v-model:value="url"
-          :placeholder="$t('home.inputPlaceholder')"
-          size="large"
-          round
-          clearable
-          :disabled="videoStore.fetching"
-          @keydown="handleKeydown"
-          @input="handleInput"
-        />
-        <n-button
-          type="primary"
-          size="large"
-          round
-          strong
-          secondary
-          :loading="videoStore.fetching"
-          :disabled="!url.trim()"
-          @click="handleSearch"
-        >
-          <template #icon>
-            <n-icon>
-              <icon-mdi-magnify />
-            </n-icon>
-          </template>
-          {{ $t("home.parse") }}
-        </n-button>
-      </n-flex>
-      <n-flex :size="8" justify="center">
-        <n-button size="small" strong secondary round @click="handlePaste">
-          <template #icon>
-            <n-icon size="14"><icon-mdi-content-paste /></n-icon>
-          </template>
-          {{ $t("home.pasteFromClipboard") }}
-        </n-button>
-        <n-button
-          size="small"
-          strong
-          secondary
-          round
-          :disabled="historyStore.items.length === 0"
-          @click="showHistory = true"
-        >
-          <template #icon>
-            <n-icon size="14"><icon-mdi-history /></n-icon>
-          </template>
-          {{ $t("home.parseHistory") }}
-        </n-button>
-      </n-flex>
+
+      <div class="home-actions">
+        <n-flex :size="8" :wrap="false" class="search-bar">
+          <n-input
+            v-model:value="url"
+            :placeholder="$t('home.inputPlaceholder')"
+            size="large"
+            round
+            clearable
+            :disabled="videoStore.fetching"
+            @keydown="handleKeydown"
+            @input="handleInput"
+          />
+          <n-button
+            type="primary"
+            size="large"
+            round
+            strong
+            secondary
+            :loading="videoStore.fetching"
+            :disabled="!url.trim()"
+            @click="handleSearch"
+          >
+            <template #icon>
+              <n-icon>
+                <icon-mdi-magnify />
+              </n-icon>
+            </template>
+            {{ $t("home.parse") }}
+          </n-button>
+        </n-flex>
+
+        <n-flex :size="8" justify="center" wrap class="action-row">
+          <n-button size="small" strong secondary round @click="handlePaste">
+            <template #icon>
+              <n-icon size="14"><icon-mdi-content-paste /></n-icon>
+            </template>
+            {{ $t("home.pasteFromClipboard") }}
+          </n-button>
+          <n-button
+            size="small"
+            strong
+            secondary
+            round
+            :disabled="historyStore.items.length === 0"
+            @click="showHistory = true"
+          >
+            <template #icon>
+              <n-icon size="14"><icon-mdi-history /></n-icon>
+            </template>
+            {{ $t("home.parseHistory") }}
+          </n-button>
+        </n-flex>
+      </div>
+
       <div class="tips-container">
         <Transition name="tip-fade" mode="out-in">
           <n-text :key="currentTipIndex" depth="3" class="tip-item">
-            {{ $t(`home.tips[${currentTipIndex}]`) }}
+            {{ tips[currentTipIndex] }}
           </n-text>
         </Transition>
       </div>
-    </n-flex>
+    </div>
 
     <n-drawer v-model:show="showHistory" :width="360" placement="right">
       <n-drawer-content :native-scrollbar="false">
@@ -296,10 +283,13 @@ const handleSearch = async () => {
 
 <style scoped lang="scss">
 .home-page {
-  height: 100%;
+  min-height: 100%;
   position: relative;
   overflow: hidden;
   isolation: isolate;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .home-page::before {
@@ -308,10 +298,10 @@ const handleSearch = async () => {
   inset: 0;
   z-index: -2;
   background:
-    radial-gradient(circle at 18% 20%, rgba(54, 150, 255, 0.18), transparent 28%),
-    radial-gradient(circle at 82% 28%, rgba(194, 66, 255, 0.18), transparent 24%),
-    radial-gradient(circle at 60% 82%, rgba(255, 48, 214, 0.14), transparent 26%),
-    linear-gradient(180deg, rgba(8, 10, 20, 0.12), rgba(8, 10, 20, 0));
+    radial-gradient(circle at 18% 20%, rgba(54, 150, 255, 0.14), transparent 28%),
+    radial-gradient(circle at 82% 28%, rgba(194, 66, 255, 0.14), transparent 24%),
+    radial-gradient(circle at 60% 82%, rgba(255, 48, 214, 0.12), transparent 26%),
+    linear-gradient(180deg, rgba(8, 10, 20, 0.08), rgba(8, 10, 20, 0));
 }
 
 .home-page::after {
@@ -319,10 +309,10 @@ const handleSearch = async () => {
   position: absolute;
   inset: 0;
   z-index: -1;
-  opacity: 0.18;
+  opacity: 0.14;
   background-image:
-    linear-gradient(transparent, rgba(115, 214, 255, 0.35), transparent),
-    linear-gradient(transparent, rgba(255, 82, 226, 0.28), transparent);
+    linear-gradient(transparent, rgba(115, 214, 255, 0.34), transparent),
+    linear-gradient(transparent, rgba(255, 82, 226, 0.24), transparent);
   background-size:
     56px 160px,
     72px 220px;
@@ -332,105 +322,84 @@ const handleSearch = async () => {
   animation: digital-rain 18s linear infinite;
 }
 
-.search-view {
-  height: 100%;
-  min-height: 300px;
-  width: min(100%, 980px);
+.home-shell {
+  width: min(100%, 760px);
   margin: 0 auto;
-  padding: clamp(20px, 4vh, 36px) 0;
-
-  .search-bar {
-    width: 100%;
-    max-width: 640px;
-  }
-}
-
-.hero-stage {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(320px, 420px);
-  align-items: center;
-  gap: clamp(20px, 4vw, 52px);
-  width: 100%;
-  padding: 10px 0 6px;
-}
-
-.hero-copy {
+  padding: clamp(24px, 6vh, 52px) 0;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  align-items: center;
+  gap: 22px;
+}
+
+.home-brand {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 20px;
+  border-radius: 24px;
+  border: 1px solid rgba(124, 212, 255, 0.1);
+  background:
+    linear-gradient(180deg, rgba(11, 14, 28, 0.92), rgba(9, 10, 18, 0.78));
+  box-shadow:
+    0 24px 70px rgba(4, 8, 18, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.home-mark {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  flex-shrink: 0;
+  box-shadow: 0 16px 30px rgba(9, 12, 24, 0.34);
+}
+
+.home-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
   min-width: 0;
 }
 
-.hero-badge {
-  align-self: flex-start;
-  padding: 8px 12px;
-  border-radius: 999px;
-  border: 1px solid rgba(109, 207, 255, 0.18);
-  background: rgba(7, 10, 24, 0.56);
-  box-shadow: 0 18px 44px rgba(3, 5, 14, 0.18);
-  color: rgba(231, 244, 255, 0.92);
+.home-kicker {
+  color: rgba(230, 240, 255, 0.95);
   font-family: "Bahnschrift", "Segoe UI Variable Display", "Segoe UI", sans-serif;
-  font-size: 12px;
-  letter-spacing: 0.16em;
-}
-
-.hero-lockup {
-  width: min(100%, 560px);
-  height: auto;
-  pointer-events: none;
-  filter: drop-shadow(0 16px 40px rgba(18, 10, 54, 0.28));
-}
-
-.hero-headline {
-  font-family: "Bahnschrift", "Segoe UI Variable Display", "Segoe UI", sans-serif;
-  font-size: clamp(28px, 4vw, 42px);
-  line-height: 1.05;
-  letter-spacing: 0.02em;
-}
-
-.hero-description {
-  max-width: 560px;
-  font-size: 15px;
-  line-height: 1.7;
-}
-
-.hero-chip-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.hero-chip {
-  padding: 9px 12px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  color: rgba(228, 240, 255, 0.82);
-  font-family: "Bahnschrift", "Segoe UI Variable Display", "Segoe UI", sans-serif;
-  font-size: 11px;
-  letter-spacing: 0.16em;
-}
-
-.hero-slogan {
   font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
 }
 
-.hero-visualizer {
-  justify-self: end;
+.home-slogan {
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.home-actions {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.search-bar {
+  width: 100%;
 }
 
 .tips-container {
   width: 100%;
-  max-width: 640px;
   text-align: center;
-  height: 20px;
+  min-height: 20px;
   position: relative;
-  margin-top: -8px;
 
   .tip-item {
     font-size: 12px;
     display: inline-block;
   }
+}
+
+.action-row {
+  width: 100%;
 }
 
 .history-title {
@@ -472,47 +441,28 @@ const handleSearch = async () => {
   }
 }
 
-@media (max-width: 900px) {
-  .hero-stage {
-    grid-template-columns: 1fr;
-    justify-items: center;
-  }
-
-  .hero-copy {
-    align-items: center;
-    text-align: center;
-  }
-
-  .hero-badge {
-    align-self: center;
-  }
-
-  .hero-description {
-    max-width: 640px;
-  }
-
-  .hero-visualizer {
-    justify-self: center;
-  }
-}
-
 @media (max-width: 640px) {
-  .search-view {
-    padding-top: 8px;
+  .home-shell {
+    padding-top: 14px;
   }
 
-  .hero-lockup {
-    width: 100%;
+  .home-brand {
+    padding: 16px;
+    border-radius: 20px;
   }
 
-  .hero-chip-row {
-    justify-content: center;
+  .home-mark {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
   }
 
-  .search-bar {
-    :deep(.n-button) {
-      padding-inline: 16px;
-    }
+  .home-kicker {
+    font-size: 12px;
+  }
+
+  .home-slogan {
+    font-size: 13px;
   }
 }
 </style>

@@ -7,6 +7,7 @@ import { check } from "@tauri-apps/plugin-updater";
 import { onOpenUrl } from "@tauri-apps/plugin-deep-link";
 import IconMdiHome from "~icons/mdi/home";
 import IconMdiDownload from "~icons/mdi/download";
+import IconMdiPlay from "~icons/mdi/play";
 import IconMdiToolbox from "~icons/mdi/toolbox";
 import type { Component } from "vue";
 import { useI18n } from "vue-i18n";
@@ -70,6 +71,7 @@ const localeOptions = localeEntries.map((e) => ({ label: `${e.flag} ${e.label}`,
 const currentRoute = computed(() => {
   const name = (route.name as string) ?? "";
   if (name === "detail") return "home";
+  if (name.startsWith("player")) return "player";
   if (name.startsWith("toolbox")) return "toolbox";
   return name;
 });
@@ -77,6 +79,7 @@ const currentRoute = computed(() => {
 const navItems: { key: string; icon: Component; labelKey: string }[] = [
   { key: "home", icon: IconMdiHome, labelKey: "nav.home" },
   { key: "downloads", icon: IconMdiDownload, labelKey: "nav.downloads" },
+  { key: "player", icon: IconMdiPlay, labelKey: "nav.player" },
   { key: "toolbox", icon: IconMdiToolbox, labelKey: "nav.toolbox" },
 ];
 

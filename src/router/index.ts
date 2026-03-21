@@ -19,6 +19,11 @@ const router = createRouter({
       component: () => import("@/pages/Downloads.vue"),
     },
     {
+      path: "/player",
+      name: "player",
+      component: () => import("@/pages/Player.vue"),
+    },
+    {
       path: "/toolbox",
       component: () => import("@/pages/Toolbox.vue"),
       children: [

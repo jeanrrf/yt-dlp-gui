@@ -33,7 +33,26 @@
   "nav": {
     "home": "Главная",
     "downloads": "Загрузки",
+    "player": "Плеер",
     "toolbox": "Инструменты"
+  },
+  "player": {
+    "title": "Player",
+    "subtitle": "Select a completed download to start playback.",
+    "loading": "Loading player...",
+    "playlist": "Playlist",
+    "emptyTitle": "No playable media yet",
+    "emptyDesc": "Finish a download first, then come back here to play it locally.",
+    "openDownloads": "Go to Downloads",
+    "play": "Play",
+    "pause": "Pause",
+    "previous": "Previous",
+    "next": "Next",
+    "seek": "Seek",
+    "volume": "Volume",
+    "mute": "Mute",
+    "unmute": "Unmute",
+    "failed": "This file could not be played."
   },
   "home": {
     "slogan": "Вставьте ссылку на видео и скачайте мгновенно",

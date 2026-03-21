@@ -33,7 +33,26 @@
   "nav": {
     "home": "홈",
     "downloads": "다운로드",
+    "player": "플레이어",
     "toolbox": "도구"
+  },
+  "player": {
+    "title": "Player",
+    "subtitle": "Select a completed download to start playback.",
+    "loading": "Loading player...",
+    "playlist": "Playlist",
+    "emptyTitle": "No playable media yet",
+    "emptyDesc": "Finish a download first, then come back here to play it locally.",
+    "openDownloads": "Go to Downloads",
+    "play": "Play",
+    "pause": "Pause",
+    "previous": "Previous",
+    "next": "Next",
+    "seek": "Seek",
+    "volume": "Volume",
+    "mute": "Mute",
+    "unmute": "Unmute",
+    "failed": "This file could not be played."
   },
   "home": {
     "slogan": "동영상 링크를 붙여넣고 바로 다운로드",
