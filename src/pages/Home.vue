@@ -142,6 +142,13 @@ onUnmounted(() => {
 
 <template>
   <div class="home-page">
+    <div v-if="videoStore.fetching" class="page-loading-shell">
+      <div class="page-loading-card">
+        <n-spin size="large" />
+        <n-text depth="3" class="page-loading-text">Analisando mídia...</n-text>
+      </div>
+    </div>
+
     <div class="home-shell">
       <div class="home-brand">
         <img src="/sentinnell-mark.png" alt="SENTINNELL PLAY NOW" class="home-mark" />
@@ -340,8 +347,7 @@ onUnmounted(() => {
   padding: 18px 20px;
   border-radius: 24px;
   border: 1px solid rgba(124, 212, 255, 0.1);
-  background:
-    linear-gradient(180deg, rgba(11, 14, 28, 0.92), rgba(9, 10, 18, 0.78));
+  background: linear-gradient(180deg, rgba(11, 14, 28, 0.92), rgba(9, 10, 18, 0.78));
   box-shadow:
     0 24px 70px rgba(4, 8, 18, 0.34),
     inset 0 1px 0 rgba(255, 255, 255, 0.06);

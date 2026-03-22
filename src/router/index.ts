@@ -1,7 +1,12 @@
-import { createRouter, createWebHistory } from "vue-router";
+import { createRouter, createWebHashHistory, createWebHistory } from "vue-router";
+
+const isTauri =
+  typeof window !== "undefined" &&
+  typeof window.location !== "undefined" &&
+  window.location.protocol === "tauri:";
 
 const router = createRouter({
-  history: createWebHistory(),
+  history: isTauri ? createWebHashHistory() : createWebHistory(),
   routes: [
     {
       path: "/",

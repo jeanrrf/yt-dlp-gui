@@ -6,7 +6,6 @@ import { check } from "@tauri-apps/plugin-updater";
 import { useSettingStore } from "@/stores/setting";
 import { useStatusStore } from "@/stores/status";
 import { useI18n } from "vue-i18n";
-import { localeEntries } from "@/locales";
 import { getVersion } from "@tauri-apps/api/app";
 
 const { t } = useI18n();
@@ -23,8 +22,6 @@ const platformLabel = computed(() => {
   };
   return map[platform.value] || platform.value;
 });
-
-const localeOptions = localeEntries.map((e) => ({ label: `${e.flag} ${e.label}`, value: e.code }));
 
 const themeModeOptions = computed(() => [
   { label: t("settings.themeAuto"), value: "auto" },
@@ -329,15 +326,6 @@ onMounted(async () => {
 
     <n-card :title="$t('settings.appearance')" size="small" class="section-card">
       <div class="info-list">
-        <div class="info-row">
-          <span class="info-label">{{ $t("settings.language") }}</span>
-          <n-select
-            v-model:value="settingStore.locale"
-            :options="localeOptions"
-            style="width: 120px"
-            size="small"
-          />
-        </div>
         <div class="info-row">
           <span class="info-label">{{ $t("settings.themeMode") }}</span>
           <n-select

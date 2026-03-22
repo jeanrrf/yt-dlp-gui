@@ -14,7 +14,6 @@ import { useI18n } from "vue-i18n";
 import { useSettingStore } from "@/stores/setting";
 import { useDownloadStore } from "@/stores/download";
 import { useStatusStore } from "@/stores/status";
-import { localeEntries } from "@/locales";
 
 interface CloseRequestEvent {
   preventDefault(): void;
@@ -65,8 +64,6 @@ const handleQuitRequest = async () => {
     exit(0);
   }
 };
-
-const localeOptions = localeEntries.map((e) => ({ label: `${e.flag} ${e.label}`, value: e.code }));
 
 const currentRoute = computed(() => {
   const name = (route.name as string) ?? "";
@@ -204,29 +201,6 @@ onMounted(async () => {
         </div>
         <div class="header-side header-side-right">
           <n-button
-            :focusable="false"
-            quaternary
-            circle
-            tag="a"
-            href="https://github.com/imsyy/yt-dlp-gui"
-            target="_blank"
-          >
-            <template #icon>
-              <n-icon>
-                <icon-mdi-github />
-              </n-icon>
-            </template>
-          </n-button>
-          <n-popselect v-model:value="settingStore.locale" :options="localeOptions" trigger="click">
-            <n-button :focusable="false" quaternary circle>
-              <template #icon>
-                <n-icon>
-                  <icon-mdi-translate />
-                </n-icon>
-              </template>
-            </n-button>
-          </n-popselect>
-          <n-button
             :type="currentRoute === 'settings' ? 'primary' : 'default'"
             :secondary="currentRoute === 'settings'"
             :quaternary="currentRoute !== 'settings'"
@@ -251,7 +225,17 @@ onMounted(async () => {
         <div style="flex: 1">
           <router-view v-slot="{ Component: RouteComponent }">
             <Transition name="fade-slide" mode="out-in">
-              <component :is="RouteComponent" />
+              <Suspense>
+                <component :is="RouteComponent" />
+                <template #fallback>
+                  <div class="page-loading-shell">
+                    <div class="page-loading-card">
+                      <n-spin size="large" />
+                      <n-text depth="3" class="page-loading-text">Carregando página...</n-text>
+                    </div>
+                  </div>
+                </template>
+              </Suspense>
             </Transition>
           </router-view>
         </div>
@@ -393,6 +377,7 @@ onMounted(async () => {
     }
   }
 }
+
 
 .app-footer {
   padding: 24px 0 4px;

@@ -282,7 +282,14 @@ const handleClearFinished = () => {
 </script>
 
 <template>
-  <n-flex vertical :size="24">
+  <div v-if="!downloadStore.loaded" class="page-loading-shell">
+    <div class="page-loading-card">
+      <n-spin size="large" />
+      <n-text depth="3" class="page-loading-text">Carregando downloads...</n-text>
+    </div>
+  </div>
+
+  <n-flex v-else vertical :size="24">
     <div class="section">
       <n-flex align="center" :size="8" style="margin-bottom: 12px">
         <n-icon size="16"><icon-mdi-download /></n-icon>

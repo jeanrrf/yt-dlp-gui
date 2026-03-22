@@ -95,6 +95,12 @@ export interface DownloadTask {
   params: DownloadTaskParams;
 }
 
+export interface MediaFile {
+  path: string;
+  fileName: string;
+  modifiedAt: number;
+}
+
 export interface PlaylistEntry {
   id: string;
   title: string;

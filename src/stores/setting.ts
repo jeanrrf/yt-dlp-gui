@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { setI18nLocale, resolveLocale } from "@/locales";
+import { APP_LOCALE, setI18nLocale } from "@/locales";
 
 export const useSettingStore = defineStore(
   "setting",
@@ -9,11 +9,16 @@ export const useSettingStore = defineStore(
       return Number.isFinite(normalized) && normalized >= 0 ? normalized : fallback;
     };
 
-    const locale = ref(resolveLocale(""));
+    const locale = ref(APP_LOCALE);
 
-    watch(locale, (value) => {
-      setI18nLocale(value);
-    });
+    watch(
+      locale,
+      () => {
+        if (locale.value !== APP_LOCALE) locale.value = APP_LOCALE;
+        setI18nLocale();
+      },
+      { immediate: true },
+    );
 
     const themeMode = ref<"auto" | "light" | "dark">("auto");
     const downloadDir = ref("");

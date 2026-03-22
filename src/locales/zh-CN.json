@@ -52,7 +52,8 @@
     "volume": "Volume",
     "mute": "Mute",
     "unmute": "Unmute",
-    "failed": "This file could not be played."
+    "failed": "This file could not be played.",
+    "onlyTauri": "本地媒体播放仅在 Tauri 桌面应用中可用，浏览器开发服务器无法直接打开 Windows 本地文件路径。"
   },
   "home": {
     "slogan": "粘贴视频链接，快速下载",

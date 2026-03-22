@@ -647,3 +647,82 @@ pub fn delete_file(path: String) -> Result<(), String> {
     }
     Ok(())
 }
+
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MediaFileEntry {
+    pub path: String,
+    pub file_name: String,
+    pub modified_at: u64,
+}
+
+#[tauri::command]
+pub fn list_media_files(download_dir: String) -> Result<Vec<MediaFileEntry>, String> {
+    let dir = std::path::Path::new(&download_dir);
+    if !dir.exists() {
+        return Ok(Vec::new());
+    }
+    if !dir.is_dir() {
+        return Err("err_invalid_download_dir".to_string());
+    }
+
+    let media_exts = [
+        "aac", "flac", "m4a", "mp3", "ogg", "opus", "wav", "wma", "mp4", "mkv", "webm", "mov",
+        "m4v", "avi",
+    ];
+
+    let mut files = Vec::new();
+    let mut pending_dirs = vec![dir.to_path_buf()];
+
+    while let Some(current_dir) = pending_dirs.pop() {
+        let entries =
+            std::fs::read_dir(&current_dir).map_err(|e| format!("err_read_dir:{}", e))?;
+
+        for entry in entries {
+            let entry = entry.map_err(|e| format!("err_read_dir_entry:{}", e))?;
+            let path = entry.path();
+
+            if path.is_dir() {
+                pending_dirs.push(path);
+                continue;
+            }
+
+            if !path.is_file() {
+                continue;
+            }
+
+            let ext = path
+                .extension()
+                .and_then(|ext| ext.to_str())
+                .map(|ext| ext.to_ascii_lowercase())
+                .unwrap_or_default();
+
+            if !media_exts.iter().any(|item| *item == ext) {
+                continue;
+            }
+
+            let metadata = entry
+                .metadata()
+                .map_err(|e| format!("err_read_metadata:{}", e))?;
+            let modified_at = metadata
+                .modified()
+                .ok()
+                .and_then(|time| time.duration_since(std::time::UNIX_EPOCH).ok())
+                .map(|duration| duration.as_millis() as u64)
+                .unwrap_or(0);
+
+            files.push(MediaFileEntry {
+                path: path.to_string_lossy().to_string(),
+                file_name: path
+                    .file_name()
+                    .and_then(|name| name.to_str())
+                    .unwrap_or_default()
+                    .to_string(),
+                modified_at,
+            });
+        }
+    }
+
+    files.sort_by(|a, b| b.modified_at.cmp(&a.modified_at));
+    Ok(files)
+}
