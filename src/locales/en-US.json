@@ -53,7 +53,8 @@
     "mute": "Mute",
     "unmute": "Unmute",
     "failed": "This file could not be played.",
-    "onlyTauri": "Local playback is only available in the Tauri desktop app. The browser dev server cannot open Windows file paths."
+    "onlyTauri": "Local playback is only available in the Tauri desktop app. The browser dev server cannot open Windows file paths.",
+    "noLibrary": "No media library found. Set a download folder to enable local playback."
   },
   "home": {
     "slogan": "Paste a video link, download instantly",

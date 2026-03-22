@@ -31,8 +31,3 @@ This file provides guidance to agents when working with code in this repository.
 - Components use `<script setup>` SFCs
 - Locales in `src/locales/` - UI is primarily in Chinese
 - Styles use SCSS with global `main.scss` and transition-specific `transitions.scss`
-
-NOTE: A canonical, centralized location for agent assets has been created at `ai-agent-extensions/`.
-See `ai-agent-extensions/README.md` for the new structure (agents, skills, prompts, mcp).
-
-Migration note: several files have been copied into `ai-agent-extensions/` as neutral, provider-agnostic assets. Originals remain in place until you confirm removal.

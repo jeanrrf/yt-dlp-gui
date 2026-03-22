@@ -509,28 +509,49 @@ onUnmounted(async () => {
 
           <div class="player-stage">
             <div class="player-frame">
-              <video
-                v-if="isDesktopShell && currentKind === 'video' && currentTrack"
-                ref="videoRef"
-                class="player-video"
-                :src="currentTrack.src"
-                :poster="currentTrack.thumbnail || undefined"
-                preload="metadata"
-                :muted="playerStore.isMuted"
-                playsinline
-                @loadedmetadata="handleLoadedMetadata"
-                @timeupdate="handleTimeUpdate"
-                @play="handleMediaPlay"
-                @pause="handleMediaPause"
-                @ended="handleEnded"
-                @error="handleMediaError"
-              />
-              <PulseVisualizer
-                v-else
-                :state="visualizerState"
-                :active="!!currentTrack && isPlaying"
-                class="player-visualizer"
-              />
+              <template v-if="isDesktopShell && currentTrack && currentKind === 'video'">
+                <video
+                  ref="videoRef"
+                  class="player-video"
+                  :src="currentTrack.src"
+                  :poster="currentTrack.thumbnail || undefined"
+                  preload="metadata"
+                  :muted="playerStore.isMuted"
+                  playsinline
+                  @loadedmetadata="handleLoadedMetadata"
+                  @timeupdate="handleTimeUpdate"
+                  @play="handleMediaPlay"
+                  @pause="handleMediaPause"
+                  @ended="handleEnded"
+                  @error="handleMediaError"
+                />
+              </template>
+
+              <template v-else-if="isDesktopShell && currentTrack && currentKind === 'audio'">
+                <div class="player-audio-cover">
+                  <div class="player-audio-icon">
+                    <n-icon><icon-mdi-music-note-outline /></n-icon>
+                  </div>
+                  <div class="player-audio-info">
+                    <n-text depth="3" strong>{{ currentTrackTitle || $t('player.title') }}</n-text>
+                    <n-text depth="3" class="player-audio-subtitle">{{ currentTrackFile || $t('player.subtitle') }}</n-text>
+                  </div>
+                </div>
+                <!-- Re‑introduce the audio visualizer when an audio track is selected -->
+                <PulseVisualizer
+                  :state="visualizerState"
+                  :active="!!currentTrack && isPlaying"
+                  class="player-visualizer"
+                />
+              </template>
+
+              <template v-else>
+                <PulseVisualizer
+                  :state="visualizerState"
+                  :active="!!currentTrack && isPlaying"
+                  class="player-visualizer"
+                />
+              </template>
             </div>
 
             <div class="player-now">
@@ -661,6 +682,15 @@ onUnmounted(async () => {
               </div>
               <n-text depth="3" class="playlist-note">{{ playlist.length }} no total</n-text>
             </div>
+
+            <n-alert
+              v-if="librarySource === 'empty'"
+              type="info"
+              :bordered="false"
+              class="library-empty-alert"
+            >
+              {{ $t('player.noLibrary') || 'Nenhuma biblioteca disponível. Por favor configure a pasta de downloads.' }}
+            </n-alert>
 
             <div class="library-toolbar">
               <n-input
@@ -872,6 +902,58 @@ onUnmounted(async () => {
   box-shadow:
     0 24px 60px rgba(1, 6, 12, 0.44),
     inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.player-audio-cover {
+  width: min(100%, 760px);
+  max-width: 100%;
+  height: min(100%, 480px);
+  border-radius: 24px;
+  border: 1px solid rgba(133, 226, 240, 0.16);
+  background:
+    linear-gradient(160deg, rgba(2, 7, 16, 0.96), rgba(10, 20, 32, 0.88)),
+    radial-gradient(circle at 30% 20%, rgba(80, 200, 255, 0.28), transparent 38%),
+    radial-gradient(circle at 72% 80%, rgba(255, 178, 98, 0.2), transparent 36%);
+  box-shadow:
+    0 22px 60px rgba(3, 6, 11, 0.36),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  display: grid;
+  place-items: center;
+  padding: 28px;
+  gap: 16px;
+}
+
+.player-audio-icon {
+  width: 90px;
+  height: 90px;
+  border-radius: 999px;
+  background: rgba(100, 217, 255, 0.18);
+  display: grid;
+  place-items: center;
+}
+
+.player-audio-info {
+  text-align: center;
+  color: rgba(243, 246, 255, 0.92);
+}
+
+.player-audio-subtitle {
+  opacity: 0.78;
+}
+
+.player-visualizer {
+  width: min(100%, 560px);
+}
+
+/* Limit the height of the playlist to prevent infinite scrolling on the page */
+.playlist-scroll {
+  max-height: 600px; /* Adjust as needed for typical screen sizes */
+  overflow-y: auto;
+}
+
+.playlist-list {
+  max-height: 600px;
+  overflow-y: auto;
 }
 
 .player-now {

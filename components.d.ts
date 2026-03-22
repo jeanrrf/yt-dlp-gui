@@ -43,6 +43,7 @@ declare module 'vue' {
     IconMdiImageSearch: typeof import('~icons/mdi/image-search')['default']
     IconMdiMagnify: typeof import('~icons/mdi/magnify')['default']
     IconMdiMessageTextOutline: typeof import('~icons/mdi/message-text-outline')['default']
+    IconMdiMusicNoteOutline: typeof import('~icons/mdi/music-note-outline')['default']
     IconMdiOpenInNew: typeof import('~icons/mdi/open-in-new')['default']
     IconMdiPause: typeof import('~icons/mdi/pause')['default']
     IconMdiPlay: typeof import('~icons/mdi/play')['default']

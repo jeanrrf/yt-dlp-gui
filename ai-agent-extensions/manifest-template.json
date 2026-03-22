@@ -1,0 +1,9 @@
+{
+  "name": "example-agent",
+  "type": "agent|skill|prompt",
+  "version": "0.1.0",
+  "provider": "local|openai|claude|other",
+  "description": "Short description",
+  "compatibility": ["gpt-4","claude-2"],
+  "tags": []
+}

@@ -1,0 +1,11 @@
+# MCP server template (neutralized)
+name: mcp-server-template
+version: 0.0.1
+schema: v1
+mcpServers:
+  - name: mcp-server-template
+    command: <command>
+    args:
+      - <arg1>
+      - <arg2>
+    env: {}

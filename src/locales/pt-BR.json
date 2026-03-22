@@ -53,7 +53,8 @@
     "mute": "Silenciar",
     "unmute": "Ativar som",
     "failed": "Não foi possível reproduzir este arquivo.",
-    "onlyTauri": "A reprodução local só funciona no app desktop Tauri. O servidor web de desenvolvimento não abre caminhos locais do Windows."
+    "onlyTauri": "A reprodução local só funciona no app desktop Tauri. O servidor web de desenvolvimento não abre caminhos locais do Windows.",
+    "noLibrary": "Nenhuma biblioteca disponível. Configure a pasta de download para usar o player local."
   },
   "home": {
     "slogan": "Cole um link e baixe na hora",
